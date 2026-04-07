@@ -1,0 +1,173 @@
+import React, { useState } from 'react';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+
+function Home() {
+    const DEFAULT_CATEGORY = [
+        { id: 1, name: 'Electronics' },
+        { id: 2, name: 'Fashion' },
+        { id: 3, name: 'Home' },
+        { id: 4, name: 'Books' },
+        { id: 5, name: 'Toys' },
+    ];
+
+    const [category, setCategory] = useState('');
+    const [file, setFile] = useState(null);
+    const [preview, setPreview] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    // Handle category change
+    const handleCategoryChange = (event) => {
+        setCategory(event.target.value);
+    };
+
+    // Handle file selection
+    const handleFileChange = (event) => {
+        const selectedFile = event.target.files[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            setPreview(URL.createObjectURL(selectedFile));
+        }
+    };
+
+    // Upload API call
+    const handleUpload = async () => {
+        if (!file || !category) {
+            alert('Please select category and image');
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('categoryName', category);
+
+            const res = await fetch('http://localhost:8081/api/images/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || 'Upload failed');
+            }
+
+            console.log('Upload success:', data);
+
+            alert('Image uploaded successfully');
+
+            // reset
+            setFile(null);
+            setPreview(null);
+            setCategory('');
+
+        } catch (error) {
+            console.error(error);
+            alert(error.message || 'Upload failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Box component="main">
+            <Box component="section" sx={{ p: 2 }}>
+
+                <Grid container spacing={2} alignItems="center">
+
+                    {/* Category Select */}
+                    <Grid item xs={12} md={6} flexGrow={1}>
+                        <FormControl fullWidth>
+                            <InputLabel id="select-category-label">Category</InputLabel>
+                            <Select
+                                labelId='select-category-label'
+                                value={category}
+                                onChange={handleCategoryChange}
+                                label="Category"
+                            >
+                                {DEFAULT_CATEGORY.map((cat) => (
+                                    <MenuItem key={cat.id} value={cat.name}>
+                                        {cat.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+
+                    {/* File Upload Button */}
+                    <Grid item xs={12} md={3}>
+                        <Button
+                            variant="outlined"
+                            component="label"
+                            fullWidth
+                            sx={{ p: 2 }}
+                        >
+                            Choose Image
+                            <input
+                                type="file"
+                                hidden
+                                accept="image/*"
+                                onChange={handleFileChange}
+                            />
+                        </Button>
+                    </Grid>
+
+                    {/* Upload Button */}
+                    <Grid item xs={12} md={3}>
+                        <Button
+                            variant="contained"
+                            fullWidth
+                            sx={{ p: 2 }}
+                            onClick={handleUpload}
+                            disabled={loading}
+                        >
+                            {loading ? 'Uploading...' : 'Upload Image'}
+                        </Button>
+                    </Grid>
+
+                    {/* Image Preview */}
+                    {preview && (
+                        <Grid item xs={12}>
+                            <Box
+                                sx={{
+                                    mt: 2,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <Typography variant="subtitle1">
+                                    Preview
+                                </Typography>
+
+                                <Box
+                                    component="img"
+                                    src={preview}
+                                    alt="preview"
+                                    sx={{
+                                        mt: 1,
+                                        maxHeight: 200,
+                                        borderRadius: 2,
+                                    }}
+                                />
+                            </Box>
+                        </Grid>
+                    )}
+
+                </Grid>
+
+            </Box>
+        </Box>
+    );
+}
+
+export default Home;
