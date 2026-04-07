@@ -11,7 +11,7 @@ function App() {
     <BrowserRouter>
       <Box className="app-start">
         <Box className="shell">
-          <Box className="topbar">
+          {/* <Box className="topbar">
             <Typography variant="h5" className="brand-title">PixelVault</Typography>
             <Typography variant="body2" className="brand-subtitle">
               Admin upload and user gallery in separate routes
@@ -24,7 +24,7 @@ function App() {
                 User Gallery
               </NavLink>
             </Box>
-          </Box>
+          </Box> */}
 
           <Box className="page-container">
             <Routes>

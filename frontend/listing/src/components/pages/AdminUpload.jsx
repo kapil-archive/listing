@@ -9,14 +9,14 @@ import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
+export const DEFAULT_CATEGORY = [
+    { id: 1, name: 'Electronics' },
+    { id: 2, name: 'Fashion' },
+    { id: 3, name: 'Home' },
+    { id: 4, name: 'Books' },
+    { id: 5, name: 'Toys' },
+];
 function AdminUpload() {
-    const DEFAULT_CATEGORY = [
-        { id: 1, name: 'Electronics' },
-        { id: 2, name: 'Fashion' },
-        { id: 3, name: 'Home' },
-        { id: 4, name: 'Books' },
-        { id: 5, name: 'Toys' },
-    ];
 
     const [category, setCategory] = useState('');
     const [file, setFile] = useState(null);
@@ -135,34 +135,36 @@ function AdminUpload() {
                             {loading ? 'Uploading...' : 'Upload Image'}
                         </Button>
                     </Grid>
-
-                    {preview && (
-                        <Grid item xs={12}>
-                            <Box
-                                sx={{
-                                    mt: 2,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                }}
-                            >
-                                <Typography variant="subtitle1">Preview</Typography>
-                                <Box
-                                    component="img"
-                                    src={preview}
-                                    alt="preview"
-                                    sx={{
-                                        mt: 1,
-                                        width: '100%',
-                                        maxHeight: 280,
-                                        objectFit: 'cover',
-                                        borderRadius: 2,
-                                    }}
-                                />
-                            </Box>
-                        </Grid>
-                    )}
                 </Grid>
+
+                {preview && (
+                    <Box
+                        sx={{
+                            mt: 3,
+                            pt: 2,
+                            borderTop: '1px solid rgba(0,0,0,0.08)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <Typography variant="subtitle1">Preview</Typography>
+                        <Box
+                            component="img"
+                            src={preview}
+                            alt="preview"
+                            sx={{
+                                mt: 1,
+                                width: '100%',
+                                height: 320,
+                                objectFit: 'contain',
+                                borderRadius: 2,
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid rgba(15, 23, 42, 0.08)',
+                            }}
+                        />
+                    </Box>
+                )}
             </Paper>
         </Box>
     );

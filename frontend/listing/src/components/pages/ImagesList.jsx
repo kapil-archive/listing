@@ -7,9 +7,18 @@ import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import CardActions from '@mui/material/CardActions';
+import IconButton from '@mui/material/IconButton';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import ShareIcon from '@mui/icons-material/Share';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { DEFAULT_CATEGORY } from './AdminUpload';
+const apiUrl = import.meta.env.VITE_BASE_URL;
 
 function ImagesList() {
+    const [allImages, setAllImages] = useState([]);
     const [images, setImages] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -17,14 +26,16 @@ function ImagesList() {
         const fetchImages = async () => {
             try {
                 setLoading(true);
-                const res = await fetch('http://localhost:8081/api/images');
+                const res = await fetch(`${apiUrl}/api/images`);
                 const data = await res.json();
 
                 if (!res.ok) {
                     throw new Error(data.message || 'Failed to fetch images');
                 }
 
-                setImages(data.data || []);
+                const fetchedImages = data.data || [];
+                setAllImages(fetchedImages);
+                setImages(fetchedImages);
             } catch (err) {
                 setError(err.message || 'Failed to fetch images');
             } finally {
@@ -35,14 +46,56 @@ function ImagesList() {
         fetchImages();
     }, []);
 
+    const handleClick = (categoryName) => {
+        setSelectedCategory(categoryName);
+
+        if (categoryName === 'All') {
+            setImages(allImages);
+            return;
+        }
+
+        const filteredImages = allImages.filter((image) =>
+            image.category?.toLowerCase() === categoryName.toLowerCase()
+        );
+        setImages(filteredImages);
+    }
+
     return (
         <Box sx={{ p: { xs: 1, md: 2 } }}>
-            <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700 }}>
-                User Gallery
+            <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2 }}>
+                All Categories
             </Typography>
-            <Typography variant="body2" sx={{ mb: 2.5, color: '#6b7280' }}>
-                Explore all uploaded images across categories.
-            </Typography>
+        
+            <div>
+                <Chip
+                    key="all"
+                    label="All"
+                    size="medium"
+                    sx={{
+                        mr: 1,
+                        mb: 1,
+                        backgroundColor: selectedCategory === 'All' ? '#0369a1' : '#f0f9ff',
+                        color: selectedCategory === 'All' ? '#ffffff' : '#0369a1',
+                    }}
+                    onClick={() => handleClick('All')}
+                />
+                {
+                    DEFAULT_CATEGORY.map((cat) => (
+                        <Chip
+                            key={cat.id}
+                            label={cat.name}
+                            size="medium"
+                            sx={{
+                                mr: 1,
+                                mb: 1,
+                                backgroundColor: selectedCategory === cat.name ? '#0369a1' : '#f0f9ff',
+                                color: selectedCategory === cat.name ? '#ffffff' : '#0369a1',
+                            }}
+                            onClick={() => handleClick(cat.name)}
+                        />
+                    ))  
+                }
+            </div>
 
             {loading && <Typography>Loading images...</Typography>}
             {error && <Typography color="error">{error}</Typography>}
@@ -71,10 +124,20 @@ function ImagesList() {
                                     <Chip label={item.category} size="small" sx={{ backgroundColor: '#ecfeff', color: '#155e75' }} />
                                     <Chip label={`${Math.round((item.size || 0) / 1024)} KB`} size="small" sx={{ backgroundColor: '#fff7ed', color: '#9a3412' }} />
                                 </Stack>
-                                <Typography variant="caption" color="text.secondary">
-                                    Uploaded {new Date(item.createdAt).toLocaleString()}
-                                </Typography>
+                                
                             </CardContent>
+                            <CardActions>
+                                <IconButton aria-label="add to favorites">
+                                    <FavoriteIcon />
+                                </IconButton>
+                                <IconButton aria-label="share">
+                                    <ShareIcon />
+                                </IconButton>
+                                <IconButton aria-label="download">
+                                    <FileDownloadIcon />
+                                </IconButton>
+                                
+                            </CardActions>
                         </Card>
                     </Grid>
                 ))}
