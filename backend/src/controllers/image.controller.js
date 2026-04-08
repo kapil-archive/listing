@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const uploadImage = async (req, res) => {
   try {
     const { categoryId, categoryName } = req.body || {};
-    
+
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
@@ -72,6 +72,8 @@ const getAllImages = async (req, res) => {
       category: item.categoryId?.name || "Unknown",
       contentType: item.image?.contentType,
       createdAt: item.createdAt,
+      favouriteCount: item.favouriteCount || 0,
+      downloadCount: item.downloadCount || 0,
       imageUrl: item.image?.data && item.image?.contentType
         ? `data:${item.image.contentType};base64,${item.image.data.toString("base64")}`
         : null,
@@ -87,4 +89,40 @@ const getAllImages = async (req, res) => {
   }
 };
 
-module.exports = { uploadImage, getAllImages };
+const updateImageStats = async (req, res) => {
+  try {
+    // const { imageId, isLiked, isDisliked, isDownload } = req.body || {};
+    const { imageId, isLiked, isDownload } = req.body || {};
+
+    if (!imageId) {
+      return res.status(400).json({ message: "Invalid imageId" });
+    }
+    const image = await Image.findById(imageId);
+    
+    if (!image) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    if (isLiked) {
+      image.favouriteCount = (image.favouriteCount || 0) + 1;
+    }
+    else if (isDownload) {
+      image.downloadCount = (image.downloadCount || 0) + 1;
+    }
+
+    await image.save();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        favouriteCount: image.favouriteCount,
+        downloadCount: image.downloadCount,
+      },
+    });
+  } catch (err) {
+    console.error("Updating images stats failed:", err);
+    res.status(500).json({ message: err.message });
+  }
+}
+
+module.exports = { uploadImage, getAllImages, updateImageStats };

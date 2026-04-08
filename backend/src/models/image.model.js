@@ -16,6 +16,14 @@ const imageSchema = new mongoose.Schema(
     },
     fileName: String,
     size: Number,
+    favouriteCount:{
+      type: Number,
+      default: 0,
+    },
+    downloadCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
