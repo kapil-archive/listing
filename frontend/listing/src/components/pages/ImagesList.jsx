@@ -124,15 +124,32 @@ function ImagesList() {
                                     <Chip label={item.category} size="small" sx={{ backgroundColor: '#ecfeff', color: '#155e75' }} />
                                     {/* <Chip label={`${Math.round((item.size || 0) / 1024)} KB`} size="small" sx={{ backgroundColor: '#fff7ed', color: '#9a3412' }} /> */}
                                 </Stack>
-
                             </CardContent>
-                            <CardActions>
-                                <IconButton aria-label="add to favorites">
-                                    <FavoriteIcon />
-                                </IconButton>
-
-                                <Chip icon={<FileDownloadIcon />} label={`${downloadCount} Download`} />
-
+                            <CardActions sx={{ p: 2 }}>
+                                <Grid container spacing={1} alignItems="center">
+                                    <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-start">
+                                        <IconButton aria-label="add to favorites">
+                                            <FavoriteIcon />
+                                        </IconButton>
+                                    </Grid>
+                                    <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-end">
+                                        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                                            <IconButton aria-label="download">
+                                                <FileDownloadIcon />
+                                            </IconButton>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    display: { xs: 'block', sm: 'block' },
+                                                    mt: { xs: 0, sm: 0 },
+                                                    textAlign: 'center',
+                                                }}
+                                            >
+                                               {downloadCount} Download
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
                             </CardActions>
                         </Card>
                     </Grid>
