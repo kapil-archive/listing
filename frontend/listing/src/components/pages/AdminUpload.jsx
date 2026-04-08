@@ -48,7 +48,7 @@ function AdminUpload() {
             formData.append('image', file);
             formData.append('categoryName', category);
 
-            const res = await fetch('http://localhost:8081/api/images/upload', {
+            const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/images/upload`, {
                 method: 'POST',
                 body: formData,
             });

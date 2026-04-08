@@ -13,6 +13,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import ShareIcon from '@mui/icons-material/Share';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { DEFAULT_CATEGORY } from './AdminUpload';
+import Button from '@mui/material/Button';
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
 function ImagesList() {
@@ -21,6 +22,7 @@ function ImagesList() {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [downloadCount, setDownloadCount] = useState(50);
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -65,7 +67,7 @@ function ImagesList() {
             <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2 }}>
                 All Categories
             </Typography>
-        
+
             <div>
                 <Chip
                     key="all"
@@ -93,7 +95,7 @@ function ImagesList() {
                             }}
                             onClick={() => handleClick(cat.name)}
                         />
-                    ))  
+                    ))
                 }
             </div>
 
@@ -124,19 +126,21 @@ function ImagesList() {
                                     <Chip label={item.category} size="small" sx={{ backgroundColor: '#ecfeff', color: '#155e75' }} />
                                     {/* <Chip label={`${Math.round((item.size || 0) / 1024)} KB`} size="small" sx={{ backgroundColor: '#fff7ed', color: '#9a3412' }} /> */}
                                 </Stack>
-                                
+
                             </CardContent>
                             <CardActions>
                                 <IconButton aria-label="add to favorites">
                                     <FavoriteIcon />
                                 </IconButton>
-                                <IconButton aria-label="share">
-                                    <ShareIcon />
-                                </IconButton>
-                                <IconButton aria-label="download">
-                                    <FileDownloadIcon />
-                                </IconButton>
-                                
+
+                                {/* <IconButton aria-label="download">
+                                    <FileDownloadIcon />{downloadCount}
+                                </IconButton> */}
+
+                                <Button variant="outlined" startIcon={<FileDownloadIcon/>}>
+                                    {downloadCount} Download
+                                </Button>
+
                             </CardActions>
                         </Card>
                     </Grid>
