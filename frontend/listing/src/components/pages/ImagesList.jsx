@@ -1,17 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import CardActions from '@mui/material/CardActions';
-import IconButton from '@mui/material/IconButton';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { DEFAULT_CATEGORY } from './AdminUpload';
+import ImageCard from '../common/ImageCard';
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
 function ImagesList() {
@@ -59,46 +52,35 @@ function ImagesList() {
         setImages(filteredImages);
     }
 
-    const handleImageStats = async (imageId,updateState) => {
-        
+    const handleImageStats = useCallback(async (imageId, updateState) => {
         try {
             const body = {
                 imageId,
-                isLiked : false,
-                isDownload : false
-            }
+                isLiked: false,
+                isDownload: false,
+            };
 
-            // updateState can be either "isLiked" or "isDownload"
             body[updateState] = true;
 
-            setLoading(true);
             const res = await fetch(`${apiUrl}/api/images/updateStats`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
+
             const data = await res.json();
 
-            if (!res.ok) {
-                throw new Error(data.message || 'Failed to update images stats');
-            }
-            // Update the local state with the new stats
+            if (!res.ok) throw new Error(data.message);
+
             setImages((prevImages) =>
                 prevImages.map((img) =>
-                    img._id === imageId
-                        ? { ...img, ...data.data } // Update the specific image with new stats
-                        : img
+                    img._id === imageId ? { ...img, ...data.data } : img
                 )
             );
         } catch (err) {
-            setError(err.message || 'Failed to update images stats');
-        } finally {
-            setLoading(false);
+            setError(err.message);
         }
-
-    }
+    }, []);
 
     return (
         <Box sx={{ p: { xs: 1, md: 2 } }}>
@@ -147,65 +129,7 @@ function ImagesList() {
             <Grid container spacing={2}>
                 {images.map((item) => (
                     <Grid item xs={12} sm={6} md={4} key={item._id}>
-                        <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid rgba(15, 23, 42, 0.08)' }}>
-                            {item.imageUrl && (
-                                <CardMedia
-                                    component="img"
-                                    height="220"
-                                    image={item.imageUrl}
-                                    alt={item.fileName || 'uploaded image'}
-                                />
-                            )}
-                            <CardContent sx={{ p: 2 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                    {item.fileName || 'Untitled'}
-                                </Typography>
-                                <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 1.5, flexWrap: 'wrap' }}>
-                                    <Chip label={item.category} size="small" sx={{ backgroundColor: '#ecfeff', color: '#155e75' }} />
-                                    {/* <Chip label={`${Math.round((item.size || 0) / 1024)} KB`} size="small" sx={{ backgroundColor: '#fff7ed', color: '#9a3412' }} /> */}
-                                </Stack>
-                            </CardContent>
-                            <CardActions sx={{ p: 2 }}>
-                                <Grid container spacing={1} alignItems="center">
-                                    <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-start">
-                                        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                                            <IconButton aria-label="add to favorites" onClick={()=>handleImageStats(item._id,"isLiked")}>
-                                                <FavoriteIcon />
-                                            </IconButton>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    display: { xs: 'block', sm: 'block' },
-                                                    mt: { xs: 0, sm: 0 },
-                                                    textAlign: 'center',
-                                                }}
-                                            >
-                                                {item.favouriteCount || 0} Likes
-                                            </Typography>
-                                        </Box>
-
-
-                                    </Grid>
-                                    <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-end">
-                                        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                                            <IconButton aria-label="download" onClick={()=>handleImageStats(item._id,"isDownload")}>
-                                                <FileDownloadIcon />
-                                            </IconButton>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    display: { xs: 'block', sm: 'block' },
-                                                    mt: { xs: 0, sm: 0 },
-                                                    textAlign: 'center',
-                                                }}
-                                            >
-                                                {item.downloadCount || 0} Download
-                                            </Typography>
-                                        </Box>
-                                    </Grid>
-                                </Grid>
-                            </CardActions>
-                        </Card>
+                        <ImageCard item={item} onAction={handleImageStats} />
                     </Grid>
                 ))}
             </Grid>
