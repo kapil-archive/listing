@@ -20,7 +20,7 @@ function ImagesList() {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [downloadCount, setDownloadCount] = useState(50);
+    // const [downloadCount, setDownloadCount] = useState(50);
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -128,9 +128,23 @@ function ImagesList() {
                             <CardActions sx={{ p: 2 }}>
                                 <Grid container spacing={1} alignItems="center">
                                     <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-start">
-                                        <IconButton aria-label="add to favorites">
-                                            <FavoriteIcon />
-                                        </IconButton>
+                                        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                                            <IconButton aria-label="add to favorites">
+                                                <FavoriteIcon />
+                                            </IconButton>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    display: { xs: 'block', sm: 'block' },
+                                                    mt: { xs: 0, sm: 0 },
+                                                    textAlign: 'center',
+                                                }}
+                                            >
+                                                {item.favouriteCount || 0} Likes
+                                            </Typography>
+                                        </Box>
+
+
                                     </Grid>
                                     <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-end">
                                         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
@@ -145,7 +159,7 @@ function ImagesList() {
                                                     textAlign: 'center',
                                                 }}
                                             >
-                                               {downloadCount} Download
+                                                {item.downloadCount || 0} Download
                                             </Typography>
                                         </Box>
                                     </Grid>
