@@ -20,7 +20,6 @@ function ImagesList() {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    // const [downloadCount, setDownloadCount] = useState(50);
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -58,6 +57,47 @@ function ImagesList() {
             image.category?.toLowerCase() === categoryName.toLowerCase()
         );
         setImages(filteredImages);
+    }
+
+    const handleImageStats = async (imageId,updateState) => {
+        
+        try {
+            const body = {
+                imageId,
+                isLiked : false,
+                isDownload : false
+            }
+
+            // updateState can be either "isLiked" or "isDownload"
+            body[updateState] = true;
+
+            setLoading(true);
+            const res = await fetch(`${apiUrl}/api/images/updateStats`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || 'Failed to update images stats');
+            }
+            // Update the local state with the new stats
+            setImages((prevImages) =>
+                prevImages.map((img) =>
+                    img._id === imageId
+                        ? { ...img, ...data.data } // Update the specific image with new stats
+                        : img
+                )
+            );
+        } catch (err) {
+            setError(err.message || 'Failed to update images stats');
+        } finally {
+            setLoading(false);
+        }
+
     }
 
     return (
@@ -129,7 +169,7 @@ function ImagesList() {
                                 <Grid container spacing={1} alignItems="center">
                                     <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-start">
                                         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                                            <IconButton aria-label="add to favorites">
+                                            <IconButton aria-label="add to favorites" onClick={()=>handleImageStats(item._id,"isLiked")}>
                                                 <FavoriteIcon />
                                             </IconButton>
                                             <Typography
@@ -148,7 +188,7 @@ function ImagesList() {
                                     </Grid>
                                     <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-end">
                                         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                                            <IconButton aria-label="download">
+                                            <IconButton aria-label="download" onClick={()=>handleImageStats(item._id,"isDownload")}>
                                                 <FileDownloadIcon />
                                             </IconButton>
                                             <Typography
