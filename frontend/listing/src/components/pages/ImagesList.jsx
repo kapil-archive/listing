@@ -10,10 +10,8 @@ import Typography from '@mui/material/Typography';
 import CardActions from '@mui/material/CardActions';
 import IconButton from '@mui/material/IconButton';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import ShareIcon from '@mui/icons-material/Share';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { DEFAULT_CATEGORY } from './AdminUpload';
-import Button from '@mui/material/Button';
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
 function ImagesList() {
@@ -133,13 +131,7 @@ function ImagesList() {
                                     <FavoriteIcon />
                                 </IconButton>
 
-                                {/* <IconButton aria-label="download">
-                                    <FileDownloadIcon />{downloadCount}
-                                </IconButton> */}
-
-                                <Button variant="outlined" startIcon={<FileDownloadIcon/>}>
-                                    {downloadCount} Download
-                                </Button>
+                                <Chip icon={<FileDownloadIcon />} label={`${downloadCount} Download`} />
 
                             </CardActions>
                         </Card>
