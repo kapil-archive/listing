@@ -15,11 +15,11 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 const ImageCard = React.memo(({ item, onAction,setOpenAd }) => {
     return (
         <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid rgba(15, 23, 42, 0.08)' }}>
-            {item.imageUrl && (
+            {item.thumbUrl && (
                 <CardMedia
                     component="img"
                     height="220"
-                    image={item.imageUrl}
+                    image={item.thumbUrl}
                     alt={item.fileName || 'uploaded image'}
                 />
             )}

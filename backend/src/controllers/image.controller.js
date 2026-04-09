@@ -1,7 +1,9 @@
 
+
 const Image = require("../models/image.model");
 const Category = require("../models/category.model");
 const mongoose = require("mongoose");
+const sharp = require("sharp");
 
 const uploadImage = async (req, res) => {
   try {
@@ -39,10 +41,20 @@ const uploadImage = async (req, res) => {
       return res.status(400).json({ message: "categoryId or categoryName is required" });
     }
 
+
+    // Generate thumbnail (e.g., 200x200)
+    const thumbBuffer = await sharp(req.file.buffer)
+      .resize(200, 200, { fit: 'inside' })
+      .toBuffer();
+
     const image = await Image.create({
       categoryId: resolvedCategoryId,
       image: {
         data: req.file.buffer,
+        contentType: req.file.mimetype,
+      },
+      thumb: {
+        data: thumbBuffer,
         contentType: req.file.mimetype,
       },
       fileName: req.file.originalname,
@@ -74,8 +86,11 @@ const getAllImages = async (req, res) => {
       createdAt: item.createdAt,
       favouriteCount: item.favouriteCount || 0,
       downloadCount: item.downloadCount || 0,
-      imageUrl: item.image?.data && item.image?.contentType
-        ? `data:${item.image.contentType};base64,${item.image.data.toString("base64")}`
+      // imageUrl: item.image?.data && item.image?.contentType
+      //   ? `data:${item.image.contentType};base64,${item.image.data.toString("base64")}`
+      //   : null,
+      thumbUrl: item.thumb?.data && item.thumb?.contentType
+        ? `data:${item.thumb.contentType};base64,${item.thumb.data.toString("base64")}`
         : null,
     }));
 

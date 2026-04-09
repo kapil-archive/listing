@@ -14,6 +14,10 @@ const imageSchema = new mongoose.Schema(
       data: Buffer,
       contentType: String,
     },
+    thumb: {
+      data: Buffer,
+      contentType: String,
+    },
     fileName: String,
     size: Number,
     favouriteCount:{
