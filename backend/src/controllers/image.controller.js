@@ -113,6 +113,10 @@ const updateImageStats = async (req, res) => {
       return res.status(400).json({ message: "Invalid imageId" });
     }
     const image = await Image.findById(imageId);
+
+    console.log("image --- ",image);
+    let originalImage = null;
+    
     
     if (!image) {
       return res.status(404).json({ message: "Image not found" });
@@ -123,6 +127,10 @@ const updateImageStats = async (req, res) => {
     }
     else if (isDownload) {
       image.downloadCount = (image.downloadCount || 0) + 1;
+      // originalImage = image.image;
+      originalImage = image.image?.data && image.image?.contentType
+        ? `data:${image.image.contentType};base64,${image.image.data.toString("base64")}`
+        : null;
     }
 
     await image.save();
@@ -132,6 +140,7 @@ const updateImageStats = async (req, res) => {
       data: {
         favouriteCount: image.favouriteCount,
         downloadCount: image.downloadCount,
+        originalImage
       },
     });
   } catch (err) {

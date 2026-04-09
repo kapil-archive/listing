@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import { DEFAULT_CATEGORY } from './AdminUpload';
 import ImageCard from '../common/ImageCard';
 import AdDialog from '../common/AdDialog';
+import { downloadBase64Image } from '../common/utils';
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
 function ImagesList() {
@@ -17,9 +18,6 @@ function ImagesList() {
     const [openAd, setOpenAd] = useState({ imageId: null, active: false });
     const openAdRef = useRef(openAd);
     const hasTrackedCurrentModalRef = useRef(false);
-
-
-    console.log("openAd ",openAd);
 
     useEffect(() => {
         openAdRef.current = openAd;
@@ -81,8 +79,12 @@ function ImagesList() {
                     img._id === imageId ? { ...img, ...data.data } : img
                 )
             );
+
+            // Always return an object with originalImage field
+            return { originalImage: data?.data?.originalImage ?? null };
         } catch (err) {
             setError(err.message);
+            return { originalImage: null };
         }
     }, []);
 
@@ -97,16 +99,12 @@ function ImagesList() {
 
             hasTrackedCurrentModalRef.current = true;
 
-            console.log("Ad is visible");
-
-            // Start timer for reward logic
-            // setTimeout(() => {
-            //     setCanDownload(true);
-            // }, 3000);
-
             console.log("Add completed--- ", openAdRef.current);
             // call the download api here
-            await handleImageStats(imageId, "isDownload");
+            const data = await handleImageStats(imageId, "isDownload");  
+            if (data?.originalImage) {
+                downloadBase64Image(data.originalImage, `${imageId}.jpg`);
+            }
         };
 
         window.googletag.pubads().addEventListener("impressionViewable", onImpressionViewable);
