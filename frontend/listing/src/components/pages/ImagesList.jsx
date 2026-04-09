@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import { DEFAULT_CATEGORY } from './AdminUpload';
 import ImageCard from '../common/ImageCard';
+import AdDialog from '../common/AdDialog';
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
 function ImagesList() {
@@ -13,6 +14,23 @@ function ImagesList() {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [openAd, setOpenAd] = useState({ imageId: null, active: false });
+    const openAdRef = useRef(openAd);
+    const hasTrackedCurrentModalRef = useRef(false);
+
+
+    console.log("openAd ",openAd);
+
+    useEffect(() => {
+        openAdRef.current = openAd;
+    }, [openAd]);
+
+    useEffect(() => {
+        if (openAd.active && openAd.imageId) {
+            hasTrackedCurrentModalRef.current = false;
+        }
+    }, [openAd.active, openAd.imageId]);
+    
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -37,20 +55,6 @@ function ImagesList() {
 
         fetchImages();
     }, []);
-
-    const handleClick = (categoryName) => {
-        setSelectedCategory(categoryName);
-
-        if (categoryName === 'All') {
-            setImages(allImages);
-            return;
-        }
-
-        const filteredImages = allImages.filter((image) =>
-            image.category?.toLowerCase() === categoryName.toLowerCase()
-        );
-        setImages(filteredImages);
-    }
 
     const handleImageStats = useCallback(async (imageId, updateState) => {
         try {
@@ -82,11 +86,58 @@ function ImagesList() {
         }
     }, []);
 
+    // You can listen to events like:
+    useEffect(() => {
+        const onImpressionViewable = async () => {
+            const { imageId, active } = openAdRef.current;
+
+            if (!active || !imageId || hasTrackedCurrentModalRef.current) {
+                return;
+            }
+
+            hasTrackedCurrentModalRef.current = true;
+
+            console.log("Ad is visible");
+
+            // Start timer for reward logic
+            // setTimeout(() => {
+            //     setCanDownload(true);
+            // }, 3000);
+
+            console.log("Add completed--- ", openAdRef.current);
+            // call the download api here
+            await handleImageStats(imageId, "isDownload");
+        };
+
+        window.googletag.pubads().addEventListener("impressionViewable", onImpressionViewable);
+
+        return () => {
+            window.googletag.pubads().removeEventListener("impressionViewable", onImpressionViewable);
+        };
+    }, [handleImageStats]);
+
+    const handleClick = (categoryName) => {
+        setSelectedCategory(categoryName);
+
+        if (categoryName === 'All') {
+            setImages(allImages);
+            return;
+        }
+
+        const filteredImages = allImages.filter((image) =>
+            image.category?.toLowerCase() === categoryName.toLowerCase()
+        );
+        setImages(filteredImages);
+    }
+
     return (
         <Box sx={{ p: { xs: 1, md: 2 } }}>
             <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2 }}>
                 All Categories
             </Typography>
+
+            {/* Ads Dialog */}
+            <AdDialog openAd={openAd} setOpenAd={setOpenAd} />
 
             <div>
                 <Chip
@@ -129,7 +180,7 @@ function ImagesList() {
             <Grid container spacing={2}>
                 {images.map((item) => (
                     <Grid item xs={12} sm={6} md={4} key={item._id}>
-                        <ImageCard item={item} onAction={handleImageStats} />
+                        <ImageCard item={item} onAction={handleImageStats} setOpenAd={setOpenAd} />
                     </Grid>
                 ))}
             </Grid>

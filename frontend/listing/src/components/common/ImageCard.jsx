@@ -12,7 +12,7 @@ import IconButton from '@mui/material/IconButton';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
-const ImageCard = React.memo(({ item, onAction }) => {
+const ImageCard = React.memo(({ item, onAction,setOpenAd }) => {
     return (
         <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid rgba(15, 23, 42, 0.08)' }}>
             {item.imageUrl && (
@@ -46,9 +46,12 @@ const ImageCard = React.memo(({ item, onAction }) => {
 
                     <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-end">
                         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                            <IconButton aria-label="download" onClick={() => onAction(item._id, "isDownload")}>
+                            <IconButton aria-label="download" onClick={() => setOpenAd(prev => ({ ...prev, imageId: item._id, active: true }))}>
                                 <FileDownloadIcon />
                             </IconButton>
+                            {/* <IconButton aria-label="download" onClick={() => onAction(item._id, "isDownload")}>
+                                <FileDownloadIcon />
+                            </IconButton> */}
                             <Typography variant="caption">
                                 {item.downloadCount || 0} Download
                             </Typography>
