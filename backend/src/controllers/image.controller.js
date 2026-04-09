@@ -75,29 +75,61 @@ const getAllImages = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    const images = await Image.find()
-      .populate("categoryId", "name")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    // Use aggregation pipeline for better performance: count + fetch in single query
+    const [result] = await Image.aggregate([
+      { $sort: { createdAt: -1 } },
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $lookup: {
+                from: "categories",
+                localField: "categoryId",
+                foreignField: "_id",
+                as: "categoryData",
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                fileName: 1,
+                size: 1,
+                createdAt: 1,
+                favouriteCount: { $ifNull: ["$favouriteCount", 0] },
+                downloadCount: { $ifNull: ["$downloadCount", 0] },
+                category: {
+                  $ifNull: [{ $arrayElemAt: ["$categoryData.name", 0] }, "Unknown"],
+                },
+                contentType: "$image.contentType",
+                thumbData: "$thumb.data",
+                thumbContentType: "$thumb.contentType",
+              },
+            },
+          ],
+        },
+      },
+    ]);
 
-      const total = await Image.countDocuments();
+    const total = result.metadata[0]?.total || 0;
+    const images = result.data || [];
 
+    // Format images with base64 conversion only for thumb
     const formattedImages = images.map((item) => ({
       _id: item._id,
       fileName: item.fileName,
       size: item.size,
-      category: item.categoryId?.name || "Unknown",
-      contentType: item.image?.contentType,
+      category: item.category,
+      contentType: item.contentType,
       createdAt: item.createdAt,
-      favouriteCount: item.favouriteCount || 0,
-      downloadCount: item.downloadCount || 0,
-      // imageUrl: item.image?.data && item.image?.contentType
-      //   ? `data:${item.image.contentType};base64,${item.image.data.toString("base64")}`
-      //   : null,
-      thumbUrl: item.thumb?.data && item.thumb?.contentType
-        ? `data:${item.thumb.contentType};base64,${item.thumb.data.toString("base64")}`
+      favouriteCount: item.favouriteCount,
+      downloadCount: item.downloadCount,
+      thumbUrl: item.thumbData && item.thumbContentType
+        ? `data:${item.thumbContentType};base64,${item.thumbData.toString("base64")}`
         : null,
     }));
 
@@ -156,5 +188,11 @@ const updateImageStats = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 }
+
+// Ensure database indexes for optimal query performance
+// Add these indexes to your MongoDB:
+// db.images.createIndex({ createdAt: -1 })
+// db.images.createIndex({ categoryId: 1 })
+// db.categories.createIndex({ name: 1 })
 
 module.exports = { uploadImage, getAllImages, updateImageStats };
