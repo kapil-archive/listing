@@ -7,6 +7,7 @@ import { DEFAULT_CATEGORY } from './AdminUpload';
 import ImageCard from '../common/ImageCard';
 import AdDialog from '../common/AdDialog';
 import { downloadBase64Image } from '../common/utils';
+import Button from '@mui/material/Button';
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
 function ImagesList() {
@@ -18,6 +19,11 @@ function ImagesList() {
     const [openAd, setOpenAd] = useState({ imageId: null, active: false });
     const openAdRef = useRef(openAd);
     const hasTrackedCurrentModalRef = useRef(false);
+    const [pageDetail, setPageDetail] = useState({
+        currentPage: 1,
+        totalPages: 1,
+    });
+
 
     useEffect(() => {
         openAdRef.current = openAd;
@@ -28,13 +34,13 @@ function ImagesList() {
             hasTrackedCurrentModalRef.current = false;
         }
     }, [openAd.active, openAd.imageId]);
-    
+
 
     useEffect(() => {
         const fetchImages = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`${apiUrl}/api/images`);
+                const res = await fetch(`${apiUrl}/api/images?page=${pageDetail.currentPage}&limit=1`);
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -42,6 +48,8 @@ function ImagesList() {
                 }
 
                 const fetchedImages = data.data || [];
+                const { currentPage, totalPages } = data || {};
+                setPageDetail({ currentPage: currentPage || 1, totalPages: totalPages || 1 });
                 setAllImages(fetchedImages);
                 setImages(fetchedImages);
             } catch (err) {
@@ -52,7 +60,17 @@ function ImagesList() {
         };
 
         fetchImages();
-    }, []);
+    }, [pageDetail.currentPage]);
+
+    const handlePageClick = (pageChange) => {
+        setPageDetail((prev) => {
+            const nextPage = prev.currentPage + pageChange;
+            if (nextPage < 1 || nextPage > prev.totalPages) {
+                return prev;
+            }
+            return { ...prev, currentPage: nextPage };
+        });
+    }
 
     const handleImageStats = useCallback(async (imageId, updateState) => {
         try {
@@ -101,7 +119,7 @@ function ImagesList() {
 
             console.log("Add completed--- ", openAdRef.current);
             // call the download api here
-            const data = await handleImageStats(imageId, "isDownload");  
+            const data = await handleImageStats(imageId, "isDownload");
             if (data?.originalImage) {
                 downloadBase64Image(data.originalImage, `${imageId}.jpg`);
             }
@@ -182,6 +200,21 @@ function ImagesList() {
                     </Grid>
                 ))}
             </Grid>
+
+
+            <Box sx={{ display: 'flex', justifyContent: 'center',alignItems:'center', mt: 4,gap:4 }}>
+
+                <Button variant="contained" color="primary" onClick={() => handlePageClick(-1)} disabled={pageDetail.currentPage === 1}>
+                    Previous
+                </Button>
+                <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                    Page {pageDetail.currentPage} of {pageDetail.totalPages}
+                </Typography>
+                <Button variant="contained" color="primary" onClick={() => handlePageClick(1)} disabled={pageDetail.currentPage === pageDetail.totalPages}>
+                    Next
+                </Button>
+
+            </Box>
         </Box>
     );
 }

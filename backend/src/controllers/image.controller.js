@@ -73,9 +73,16 @@ const uploadImage = async (req, res) => {
 
 const getAllImages = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
     const images = await Image.find()
       .populate("categoryId", "name")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+      const total = await Image.countDocuments();
 
     const formattedImages = images.map((item) => ({
       _id: item._id,
@@ -97,6 +104,8 @@ const getAllImages = async (req, res) => {
     res.status(200).json({
       success: true,
       data: formattedImages,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (err) {
     console.error("Fetching images failed:", err);
