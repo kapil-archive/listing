@@ -114,7 +114,6 @@ const updateImageStats = async (req, res) => {
     }
     const image = await Image.findById(imageId);
 
-    console.log("image --- ",image);
     let originalImage = null;
     
     
