@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
@@ -12,7 +12,6 @@ const apiUrl = import.meta.env.VITE_BASE_URL;
 
 function ImagesList() {
     const [allImages, setAllImages] = useState([]);
-    const [images, setImages] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -51,7 +50,6 @@ function ImagesList() {
                 const { currentPage, totalPages } = data || {};
                 setPageDetail({ currentPage: currentPage || 1, totalPages: totalPages || 1 });
                 setAllImages(fetchedImages);
-                setImages(fetchedImages);
             } catch (err) {
                 setError(err.message || 'Failed to fetch images');
             } finally {
@@ -62,7 +60,7 @@ function ImagesList() {
         fetchImages();
     }, [pageDetail.currentPage]);
 
-    const handlePageClick = (pageChange) => {
+    const handlePageClick = useCallback((pageChange) => {
         setPageDetail((prev) => {
             const nextPage = prev.currentPage + pageChange;
             if (nextPage < 1 || nextPage > prev.totalPages) {
@@ -70,7 +68,7 @@ function ImagesList() {
             }
             return { ...prev, currentPage: nextPage };
         });
-    }
+    }, []);
 
     const handleImageStats = useCallback(async (imageId, updateState) => {
         try {
@@ -92,7 +90,7 @@ function ImagesList() {
 
             if (!res.ok) throw new Error(data.message);
 
-            setImages((prevImages) =>
+            setAllImages((prevImages) =>
                 prevImages.map((img) =>
                     img._id === imageId ? { ...img, ...data.data } : img
                 )
@@ -105,6 +103,12 @@ function ImagesList() {
             return { originalImage: null };
         }
     }, []);
+
+    const handleImageStatsRef = useRef(handleImageStats);
+
+    useEffect(() => {
+        handleImageStatsRef.current = handleImageStats;
+    }, [handleImageStats]);
 
     // You can listen to events like:
     useEffect(() => {
@@ -119,7 +123,7 @@ function ImagesList() {
 
             console.log("Add completed--- ", openAdRef.current);
             // call the download api here
-            const data = await handleImageStats(imageId, "isDownload");
+            const data = await handleImageStatsRef.current(imageId, "isDownload");
             if (data?.originalImage) {
                 downloadBase64Image(data.originalImage, `${imageId}.jpg`);
             }
@@ -130,21 +134,21 @@ function ImagesList() {
         return () => {
             window.googletag.pubads().removeEventListener("impressionViewable", onImpressionViewable);
         };
-    }, [handleImageStats]);
+    }, []);
 
-    const handleClick = (categoryName) => {
-        setSelectedCategory(categoryName);
-
-        if (categoryName === 'All') {
-            setImages(allImages);
-            return;
+    const visibleImages = useMemo(() => {
+        if (selectedCategory === 'All') {
+            return allImages;
         }
 
-        const filteredImages = allImages.filter((image) =>
-            image.category?.toLowerCase() === categoryName.toLowerCase()
+        return allImages.filter((image) =>
+            image.category?.toLowerCase() === selectedCategory.toLowerCase()
         );
-        setImages(filteredImages);
-    }
+    }, [allImages, selectedCategory]);
+
+    const handleClick = useCallback((categoryName) => {
+        setSelectedCategory(categoryName);
+    }, []);
 
     return (
         <Box sx={{ p: { xs: 1, md: 2 } }}>
@@ -189,12 +193,12 @@ function ImagesList() {
             {loading && <Typography>Loading images...</Typography>}
             {error && <Typography color="error">{error}</Typography>}
 
-            {!loading && !error && images.length === 0 && (
+            {!loading && !error && visibleImages.length === 0 && (
                 <Typography>No images uploaded yet.</Typography>
             )}
 
             <Grid container spacing={2}>
-                {images.map((item) => (
+                {visibleImages.map((item) => (
                     <Grid item xs={12} sm={6} md={4} key={item._id}>
                         <ImageCard item={item} onAction={handleImageStats} setOpenAd={setOpenAd} />
                     </Grid>
