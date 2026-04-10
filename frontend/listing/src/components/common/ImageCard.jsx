@@ -4,7 +4,6 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Chip from '@mui/material/Chip';
-import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import CardActions from '@mui/material/CardActions';
@@ -24,7 +23,7 @@ const ImageCard = React.memo(({ item, onAction,setOpenAd }) => {
                     sx={{ width: '100%', height: 220, objectFit: 'cover', flexShrink: 0 }}
                 />
             )}
-            <CardContent sx={{ p: 2, minWidth: 0, flexGrow: 1 }}>
+            <CardContent sx={{ pt: 1.5, px: 2, pb: 0, minWidth: 0 }}>
                 <Typography
                     variant="subtitle1"
                     sx={{
@@ -35,43 +34,48 @@ const ImageCard = React.memo(({ item, onAction,setOpenAd }) => {
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
-                        minHeight: 56,
                         lineHeight: 1.4,
                     }}
                 >
                     {item.fileName || 'Untitled'}
                 </Typography>
-                <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 1.5, flexWrap: 'wrap' }}>
+                <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 0, flexWrap: 'wrap' }}>
                     <Chip label={item.category} size="small" sx={{ backgroundColor: '#ecfeff', color: '#155e75' }} />
                 </Stack>
             </CardContent>
-            <CardActions sx={{ p: 2 }}>
-                <Grid container spacing={1} alignItems="center">
-                    <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-start">
-                        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                            <IconButton aria-label="add to favorites" onClick={() => onAction(item._id, "isLiked")}>
-                                <FavoriteIcon />
-                            </IconButton>
-                            <Typography variant="caption">
-                                {item.favouriteCount || 0} Likes
-                            </Typography>
-                        </Box>
-                    </Grid>
+            <CardActions sx={{ px: 2, pt: 0, pb: 1 ,mt: 2}}>
+                <Box sx={{ width: '100%', display: 'flex', alignItems: 'center',gap : 2}}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 0.25 }}>
+                        <IconButton
+                            aria-label="add to favorites"
+                            size="small"
+                            sx={{ p: 0.5 }}
+                            onClick={() => onAction(item._id, "isLiked")}
+                        >
+                            <FavoriteIcon fontSize="small" />
+                        </IconButton>
+                        <Typography variant="caption">
+                            {item.favouriteCount || 0} Likes
+                        </Typography>
+                    </Box>
 
-                    <Grid item xs={6} sm={6} md={6} display="flex" justifyContent="flex-end">
-                        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                            <IconButton aria-label="download" onClick={() => setOpenAd(prev => ({ ...prev, imageId: item._id, active: true }))}>
-                                <FileDownloadIcon />
-                            </IconButton>
-                            {/* <IconButton aria-label="download" onClick={() => onAction(item._id, "isDownload")}>
-                                <FileDownloadIcon />
-                            </IconButton> */}
-                            <Typography variant="caption">
-                                {item.downloadCount || 0} Download
-                            </Typography>
-                        </Box>
-                    </Grid>
-                </Grid>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 0.25 }}>
+                        <IconButton
+                            aria-label="download"
+                            size="small"
+                            sx={{ p: 0.5 }}
+                            onClick={() => setOpenAd(prev => ({ ...prev, imageId: item._id, active: true }))}
+                        >
+                            <FileDownloadIcon fontSize="small" />
+                        </IconButton>
+                        {/* <IconButton aria-label="download" onClick={() => onAction(item._id, "isDownload")}>
+                            <FileDownloadIcon />
+                        </IconButton> */}
+                        <Typography variant="caption">
+                            {item.downloadCount || 0} Download
+                        </Typography>
+                    </Box>
+                </Box>
             </CardActions>
         </Card>
     );
