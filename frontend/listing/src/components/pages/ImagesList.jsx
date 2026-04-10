@@ -40,7 +40,7 @@ function ImagesList() {
         const fetchImages = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`${apiUrl}/api/images?page=${pageDetail.currentPage}&limit=50`);
+                const res = await fetch(`${apiUrl}/api/images?page=${pageDetail.currentPage}&limit=1`);
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -232,10 +232,11 @@ function ImagesList() {
                     display: 'grid',
                     gap: { xs: 1.5, sm: 2 },
                     gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    justifyItems: 'center',
                 }}
             >
                 {visibleImages.map((item) => (
-                    <Box key={item._id}>
+                    <Box key={item._id} sx={{ width: '100%', maxWidth: 360 }}>
                         <ImageCard item={item} onAction={handleImageStats} setOpenAd={setOpenAd} />
                     </Box>
                 ))}
