@@ -274,6 +274,7 @@ function ImagesList() {
                                 color="primary"
                                 onClick={() => handlePageNumberClick(pageNumber)}
                                 sx={{ minWidth: 40 }}
+                                size='small'
                             >
                                 {pageNumber}
                             </Button>
