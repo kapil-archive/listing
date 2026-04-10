@@ -40,7 +40,7 @@ function ImagesList() {
         const fetchImages = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`${apiUrl}/api/images?page=${pageDetail.currentPage}&limit=1`);
+                const res = await fetch(`${apiUrl}/api/images?page=${pageDetail.currentPage}&limit=10`);
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -231,12 +231,19 @@ function ImagesList() {
                     mt: 1,
                     display: 'grid',
                     gap: { xs: 1.5, sm: 2 },
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                    justifyItems: 'center',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
+                    justifyItems: 'start',
                 }}
             >
                 {visibleImages.map((item) => (
-                    <Box key={item._id} sx={{ width: '100%', maxWidth: 360 }}>
+                    <Box
+                        key={item._id}
+                        sx={{
+                            width: '100%',
+                            maxWidth: visibleImages.length === 1 ? 360 : '100%',
+                            justifySelf: 'start',
+                        }}
+                    >
                         <ImageCard item={item} onAction={handleImageStats} setOpenAd={setOpenAd} />
                     </Box>
                 ))}
