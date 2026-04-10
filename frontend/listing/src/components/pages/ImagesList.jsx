@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
+import Portal from '@mui/material/Portal';
 import { DEFAULT_CATEGORY } from './AdminUpload';
 import ImageCard from '../common/ImageCard';
 import AdDialog from '../common/AdDialog';
@@ -180,7 +181,7 @@ function ImagesList() {
     }, []);
 
     return (
-        <Box sx={{ p: { xs: 1, md: 2 } }}>
+        <Box sx={{ p: { xs: 1, md: 2 }, pb: { xs: 14, md: 12 } }}>
             <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2 }}>
                 All Categories
             </Typography>
@@ -233,32 +234,47 @@ function ImagesList() {
                     </Grid>
                 ))}
             </Grid>
+            <Portal>
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 2000,
+                        backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                        borderTop: '1px solid #e5e7eb',
+                        boxShadow: '0 -8px 20px rgba(15, 23, 42, 0.08)',
+                        px: { xs: 1, md: 2 },
+                        py: 1,
+                    }}
+                >
+                    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <Button variant="contained" color="primary" onClick={() => handlePageWindowClick(-1)} disabled={!hasPreviousWindow}>
+                            Previous
+                        </Button>
 
+                        {visiblePageNumbers.map((pageNumber) => (
+                            <Button
+                                key={pageNumber}
+                                variant={pageDetail.currentPage === pageNumber ? 'contained' : 'outlined'}
+                                color="primary"
+                                onClick={() => handlePageNumberClick(pageNumber)}
+                                sx={{ minWidth: 40 }}
+                            >
+                                {pageNumber}
+                            </Button>
+                        ))}
 
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 4, gap: 1, flexWrap: 'wrap' }}>
-                <Button variant="contained" color="primary" onClick={() => handlePageWindowClick(-1)} disabled={!hasPreviousWindow}>
-                    Previous
-                </Button>
-
-                {visiblePageNumbers.map((pageNumber) => (
-                    <Button
-                        key={pageNumber}
-                        variant={pageDetail.currentPage === pageNumber ? 'contained' : 'outlined'}
-                        color="primary"
-                        onClick={() => handlePageNumberClick(pageNumber)}
-                        sx={{ minWidth: 40 }}
-                    >
-                        {pageNumber}
-                    </Button>
-                ))}
-
-                <Button variant="contained" color="primary" onClick={() => handlePageWindowClick(1)} disabled={!hasNextWindow}>
-                    Next
-                </Button>
-                <Typography variant="body2" sx={{ color: '#6b7280', width: '100%', textAlign: 'center' }}>
-                    Page {pageDetail.currentPage} of {pageDetail.totalPages}
-                </Typography>
-            </Box>
+                        <Button variant="contained" color="primary" onClick={() => handlePageWindowClick(1)} disabled={!hasNextWindow}>
+                            Next
+                        </Button>
+                        <Typography variant="body2" sx={{ color: '#6b7280', width: '100%', textAlign: 'center' }}>
+                            Page {pageDetail.currentPage} of {pageDetail.totalPages}
+                        </Typography>
+                    </Box>
+                </Box>
+            </Portal>
         </Box>
     );
 }
