@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import AdminUpload from './components/pages/AdminUpload';
 import ImagesList from './components/pages/ImagesList';
 import AppHeader from './components/common/AppHeader';
+import AppFooter from './components/common/AppFooter';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             </Routes>
           </Box>
         </Box>
+        <AppFooter />
       </Box>
     </BrowserRouter>
   );

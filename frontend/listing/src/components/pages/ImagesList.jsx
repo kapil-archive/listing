@@ -248,7 +248,6 @@ function ImagesList() {
                     </Box>
                 ))}
             </Box>
-            <Portal>
                 <Box
                     sx={{
                         position: 'fixed',
@@ -288,6 +287,7 @@ function ImagesList() {
                         </Typography>
                     </Box>
                 </Box>
+            <Portal>
             </Portal>
         </Box>
     );
