@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
-import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Portal from '@mui/material/Portal';
 import { DEFAULT_CATEGORY } from './AdminUpload';
@@ -41,7 +40,7 @@ function ImagesList() {
         const fetchImages = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`${apiUrl}/api/images?page=${pageDetail.currentPage}&limit=1`);
+                const res = await fetch(`${apiUrl}/api/images?page=${pageDetail.currentPage}&limit=50`);
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -227,13 +226,20 @@ function ImagesList() {
                 <Typography>No images uploaded yet.</Typography>
             )}
 
-            <Grid container spacing={2}>
+            <Box
+                sx={{
+                    mt: 1,
+                    display: 'grid',
+                    gap: { xs: 1.5, sm: 2 },
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                }}
+            >
                 {visibleImages.map((item) => (
-                    <Grid item xs={12} sm={6} md={4} key={item._id}>
+                    <Box key={item._id}>
                         <ImageCard item={item} onAction={handleImageStats} setOpenAd={setOpenAd} />
-                    </Grid>
+                    </Box>
                 ))}
-            </Grid>
+            </Box>
             <Portal>
                 <Box
                     sx={{

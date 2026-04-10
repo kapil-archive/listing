@@ -14,17 +14,31 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 const ImageCard = React.memo(({ item, onAction,setOpenAd }) => {
     return (
-        <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid rgba(15, 23, 42, 0.08)' }}>
+        <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid rgba(15, 23, 42, 0.08)', height: '100%', display: 'flex', flexDirection: 'column' }}>
             {item.thumbUrl && (
                 <CardMedia
                     component="img"
                     height="220"
                     image={item.thumbUrl}
                     alt={item.fileName || 'uploaded image'}
+                    sx={{ width: '100%', height: 220, objectFit: 'cover', flexShrink: 0 }}
                 />
             )}
-            <CardContent sx={{ p: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            <CardContent sx={{ p: 2, minWidth: 0, flexGrow: 1 }}>
+                <Typography
+                    variant="subtitle1"
+                    sx={{
+                        fontWeight: 600,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        minHeight: 56,
+                        lineHeight: 1.4,
+                    }}
+                >
                     {item.fileName || 'Untitled'}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 1.5, flexWrap: 'wrap' }}>
