@@ -1,22 +1,18 @@
 
 import './App.css';
-import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import AdminUpload from './components/pages/AdminUpload';
 import ImagesList from './components/pages/ImagesList';
-import InstallPWA from './components/common/InstallPWA';
+import AppHeader from './components/common/AppHeader';
 
 function App() {
   return (
     <BrowserRouter>
       <Box className="app-start">
+        <AppHeader />
         <Box className="shell">
-
           <Box className="page-container">
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <InstallPWA />
-            </div>
             <Routes>
               <Route path="/" element={<Navigate to="/images" replace />} />
               <Route path="/admin" element={<AdminUpload />} />
