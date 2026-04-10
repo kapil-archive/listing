@@ -81,10 +81,10 @@ function AdminUpload() {
                     background: 'linear-gradient(180deg, #fff8f0 0%, #ffffff 65%)',
                 }}
             >
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, textAlign: 'center' }}>
                     Admin Image Upload
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5, mb: 2.5 }}>
+                <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5, mb: 2.5, textAlign: 'center' }}>
                     Choose a category, select an image, and publish it to the gallery.
                 </Typography>
 

@@ -2,20 +2,19 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const FOOTER_LINKS = [
   { label: 'Images', path: '/images' },
   { label: 'Admin Upload', path: '/admin' },
+  { label: 'Fill Form', path: '/fill-form' },
   { label: 'Privacy and policy', path: '/' },
   { label: 'Terms and Conditions', path: '/' },
 ];
 
 function AppFooter() {
   const navigate = useNavigate();
-  const location = useLocation();
   const year = new Date().getFullYear();
-  const hasBottomOverlay = location.pathname === '/images';
 
   return (
     <Box

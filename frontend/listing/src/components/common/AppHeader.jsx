@@ -18,7 +18,7 @@ import InstallPWA from './InstallPWA';
 const NAV_OPTIONS = [
   { label: 'Privacy and policy', path: '/' },
   { label: 'Terms and Conditions', path: '/' },
-  { label: 'Fill Form', path: '/' },
+  { label: 'Fill Form', path: '/fill-form' },
 ];
 
 function AppHeader() {
@@ -57,9 +57,9 @@ function AppHeader() {
           </Stack>
 
           <Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: 'none', md: 'flex' } }}>
-            {NAV_OPTIONS.map((item) => (
+            {NAV_OPTIONS.map((item, index) => (
               <Button
-                key={item.path}
+                key={`${item.label}-${index}`}
                 variant={isActivePath(item.path) ? 'contained' : 'text'}
                 onClick={() => handleNavigate(item.path)}
                 sx={{ borderRadius: 999 }}
@@ -85,9 +85,9 @@ function AppHeader() {
             Menu
           </Typography>
           <List>
-            {NAV_OPTIONS.map((item) => (
+            {NAV_OPTIONS.map((item, index) => (
               <ListItemButton
-                key={item.path}
+                key={`${item.label}-${index}`}
                 selected={isActivePath(item.path)}
                 onClick={() => handleNavigate(item.path)}
               >

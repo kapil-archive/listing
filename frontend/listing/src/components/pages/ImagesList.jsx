@@ -181,7 +181,7 @@ function ImagesList() {
 
     return (
         <Box sx={{ p: { xs: 1, md: 2 }, pb: { xs: 14, md: 12 } }}>
-            <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2 }}>
+            <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2, textAlign: 'center' }}>
                 All Categories
             </Typography>
 
