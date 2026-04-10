@@ -9,6 +9,7 @@ import AdDialog from '../common/AdDialog';
 import { downloadBase64Image } from '../common/utils';
 import Button from '@mui/material/Button';
 const apiUrl = import.meta.env.VITE_BASE_URL;
+const PAGE_WINDOW_SIZE = 10;
 
 function ImagesList() {
     const [allImages, setAllImages] = useState([]);
@@ -60,15 +61,43 @@ function ImagesList() {
         fetchImages();
     }, [pageDetail.currentPage]);
 
-    const handlePageClick = useCallback((pageChange) => {
+    const handlePageWindowClick = useCallback((windowDirection) => {
         setPageDetail((prev) => {
-            const nextPage = prev.currentPage + pageChange;
-            if (nextPage < 1 || nextPage > prev.totalPages) {
+            const currentWindowStart = Math.floor((prev.currentPage - 1) / PAGE_WINDOW_SIZE) * PAGE_WINDOW_SIZE + 1;
+            const nextWindowStart = currentWindowStart + (windowDirection * PAGE_WINDOW_SIZE);
+            const boundedNextWindowStart = Math.max(1, Math.min(nextWindowStart, prev.totalPages));
+
+            if (boundedNextWindowStart === currentWindowStart) {
                 return prev;
             }
-            return { ...prev, currentPage: nextPage };
+
+            return { ...prev, currentPage: boundedNextWindowStart };
         });
     }, []);
+
+    const handlePageNumberClick = useCallback((pageNumber) => {
+        setPageDetail((prev) => {
+            if (pageNumber < 1 || pageNumber > prev.totalPages || pageNumber === prev.currentPage) {
+                return prev;
+            }
+            return { ...prev, currentPage: pageNumber };
+        });
+    }, []);
+
+    const visiblePageNumbers = useMemo(() => {
+        const totalPages = pageDetail.totalPages || 1;
+        const currentPage = pageDetail.currentPage || 1;
+        const startPage = Math.floor((currentPage - 1) / PAGE_WINDOW_SIZE) * PAGE_WINDOW_SIZE + 1;
+        const endPage = Math.min(startPage + PAGE_WINDOW_SIZE - 1, totalPages);
+
+        return Array.from({ length: endPage - startPage + 1 }, (_, index) => startPage + index);
+    }, [pageDetail.currentPage, pageDetail.totalPages]);
+
+    const hasPreviousWindow = useMemo(() => visiblePageNumbers[0] > 1, [visiblePageNumbers]);
+    const hasNextWindow = useMemo(
+        () => visiblePageNumbers[visiblePageNumbers.length - 1] < pageDetail.totalPages,
+        [visiblePageNumbers, pageDetail.totalPages]
+    );
 
     const handleImageStats = useCallback(async (imageId, updateState) => {
         try {
@@ -206,18 +235,29 @@ function ImagesList() {
             </Grid>
 
 
-            <Box sx={{ display: 'flex', justifyContent: 'center',alignItems:'center', mt: 4,gap:4 }}>
-
-                <Button variant="contained" color="primary" onClick={() => handlePageClick(-1)} disabled={pageDetail.currentPage === 1}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 4, gap: 1, flexWrap: 'wrap' }}>
+                <Button variant="contained" color="primary" onClick={() => handlePageWindowClick(-1)} disabled={!hasPreviousWindow}>
                     Previous
                 </Button>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                    Page {pageDetail.currentPage} of {pageDetail.totalPages}
-                </Typography>
-                <Button variant="contained" color="primary" onClick={() => handlePageClick(1)} disabled={pageDetail.currentPage === pageDetail.totalPages}>
+
+                {visiblePageNumbers.map((pageNumber) => (
+                    <Button
+                        key={pageNumber}
+                        variant={pageDetail.currentPage === pageNumber ? 'contained' : 'outlined'}
+                        color="primary"
+                        onClick={() => handlePageNumberClick(pageNumber)}
+                        sx={{ minWidth: 40 }}
+                    >
+                        {pageNumber}
+                    </Button>
+                ))}
+
+                <Button variant="contained" color="primary" onClick={() => handlePageWindowClick(1)} disabled={!hasNextWindow}>
                     Next
                 </Button>
-
+                <Typography variant="body2" sx={{ color: '#6b7280', width: '100%', textAlign: 'center' }}>
+                    Page {pageDetail.currentPage} of {pageDetail.totalPages}
+                </Typography>
             </Box>
         </Box>
     );
