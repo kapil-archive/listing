@@ -255,32 +255,48 @@ const reportImage = async (req, res) => {
 
 const getBlockedImages = async (req, res) => {
   try {
-    const blockedImages = await Report.aggregate([
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 9;
+    const skip = (page - 1) * limit;
+
+    const [result] = await Report.aggregate([
       { $sort: { createdAt: -1 } },
       {
-        $lookup: {
-          from: "categories",
-          localField: "categoryId",
-          foreignField: "_id",
-          as: "categoryData",
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          imageId: 1,
-          categoryId: 1,
-          fileName: 1,
-          size: 1,
-          createdAt: 1,
-          category: {
-            $ifNull: [{ $arrayElemAt: ["$categoryData.name", 0] }, "Unknown"],
-          },
-          reportImageData: "$image.data",
-          reportImageContentType: "$image.contentType",
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $lookup: {
+                from: "categories",
+                localField: "categoryId",
+                foreignField: "_id",
+                as: "categoryData",
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                imageId: 1,
+                categoryId: 1,
+                fileName: 1,
+                size: 1,
+                createdAt: 1,
+                category: {
+                  $ifNull: [{ $arrayElemAt: ["$categoryData.name", 0] }, "Unknown"],
+                },
+                reportImageData: "$image.data",
+                reportImageContentType: "$image.contentType",
+              },
+            },
+          ],
         },
       },
     ]);
+
+    const total = result?.metadata?.[0]?.total || 0;
+    const blockedImages = result?.data || [];
 
     const data = blockedImages.map((item) => ({
       reportId: item._id,
@@ -298,6 +314,9 @@ const getBlockedImages = async (req, res) => {
     res.status(200).json({
       success: true,
       data,
+      currentPage: page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+      total,
     });
   } catch (err) {
     console.error("Fetching blocked images failed:", err);

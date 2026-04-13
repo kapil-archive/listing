@@ -15,12 +15,17 @@ function BlockedImages() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pageDetail, setPageDetail] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    total: 0,
+  });
 
   useEffect(() => {
     const fetchBlockedImages = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${apiUrl}/api/images/blocked`);
+        const res = await fetch(`${apiUrl}/api/images/blocked?page=${pageDetail.currentPage}&limit=9`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -28,6 +33,12 @@ function BlockedImages() {
         }
 
         setItems(data.data || []);
+        setPageDetail((prev) => ({
+          ...prev,
+          currentPage: data.currentPage || 1,
+          totalPages: data.totalPages || 1,
+          total: data.total || 0,
+        }));
       } catch (err) {
         setError(err.message || 'Failed to fetch blocked images');
       } finally {
@@ -36,7 +47,17 @@ function BlockedImages() {
     };
 
     fetchBlockedImages();
-  }, []);
+  }, [pageDetail.currentPage]);
+
+  const handlePageChange = (direction) => {
+    setPageDetail((prev) => {
+      const nextPage = prev.currentPage + direction;
+      if (nextPage < 1 || nextPage > prev.totalPages) {
+        return prev;
+      }
+      return { ...prev, currentPage: nextPage };
+    });
+  };
 
   return (
     <Box>
@@ -84,6 +105,20 @@ function BlockedImages() {
           </Grid>
         ))}
       </Grid>
+
+      {!loading && !error && pageDetail.total > 0 && (
+        <Box sx={{ mt: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+          <Button variant="outlined" onClick={() => handlePageChange(-1)} disabled={pageDetail.currentPage <= 1}>
+            Previous
+          </Button>
+          <Typography variant="body2" sx={{ color: '#475569' }}>
+            Page {pageDetail.currentPage} of {pageDetail.totalPages}
+          </Typography>
+          <Button variant="outlined" onClick={() => handlePageChange(1)} disabled={pageDetail.currentPage >= pageDetail.totalPages}>
+            Next
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 }
