@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import Portal from '@mui/material/Portal';
-import { DEFAULT_CATEGORY } from './AdminUpload';
+import { DEFAULT_CATEGORY } from './category.constants';
 import ImageCard from '../common/ImageCard';
 import AdDialog from '../common/AdDialog';
 import ReportDialog from '../common/ReportDialog';

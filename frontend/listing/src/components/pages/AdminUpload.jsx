@@ -8,15 +8,12 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import Stack from '@mui/material/Stack';
+import { useNavigate } from 'react-router-dom';
+import { DEFAULT_CATEGORY } from './category.constants';
 
-export const DEFAULT_CATEGORY = [
-    { id: 1, name: 'Electronics' },
-    { id: 2, name: 'Fashion' },
-    { id: 3, name: 'Home' },
-    { id: 4, name: 'Books' },
-    { id: 5, name: 'Toys' },
-];
 function AdminUpload() {
+    const navigate = useNavigate();
 
     const [category, setCategory] = useState('');
     const [file, setFile] = useState(null);
@@ -87,6 +84,12 @@ function AdminUpload() {
                 <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5, mb: 2.5, textAlign: 'center' }}>
                     Choose a category, select an image, and publish it to the gallery.
                 </Typography>
+
+                <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+                    <Button variant="text" onClick={() => navigate('/admin/blocked-images')}>
+                        View Blocked Images
+                    </Button>
+                </Stack>
 
                 <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={6} flexGrow={1}>

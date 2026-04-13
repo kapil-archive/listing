@@ -253,4 +253,56 @@ const reportImage = async (req, res) => {
   }
 }
 
-module.exports = { uploadImage, getAllImages, updateImageStats, reportImage };
+const getBlockedImages = async (req, res) => {
+  try {
+    const blockedImages = await Report.aggregate([
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "categoryData",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          imageId: 1,
+          categoryId: 1,
+          fileName: 1,
+          size: 1,
+          createdAt: 1,
+          category: {
+            $ifNull: [{ $arrayElemAt: ["$categoryData.name", 0] }, "Unknown"],
+          },
+          reportImageData: "$image.data",
+          reportImageContentType: "$image.contentType",
+        },
+      },
+    ]);
+
+    const data = blockedImages.map((item) => ({
+      reportId: item._id,
+      imageId: item.imageId,
+      categoryId: item.categoryId,
+      fileName: item.fileName,
+      size: item.size,
+      category: item.category,
+      createdAt: item.createdAt,
+      reportImageUrl: item.reportImageData && item.reportImageContentType
+        ? `data:${item.reportImageContentType};base64,${item.reportImageData.toString("base64")}`
+        : null,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (err) {
+    console.error("Fetching blocked images failed:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { uploadImage, getAllImages, updateImageStats, reportImage, getBlockedImages };
