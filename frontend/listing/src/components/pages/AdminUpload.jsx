@@ -9,6 +9,13 @@ import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
+import Divider from '@mui/material/Divider';
+import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
+import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import { useNavigate } from 'react-router-dom';
 import { DEFAULT_CATEGORY } from './category.constants';
 
@@ -19,9 +26,11 @@ function AdminUpload() {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [uploadStatus, setUploadStatus] = useState({ type: '', message: '' });
 
     const handleCategoryChange = (event) => {
         setCategory(event.target.value);
+        setUploadStatus({ type: '', message: '' });
     };
 
     const handleFileChange = (event) => {
@@ -29,12 +38,13 @@ function AdminUpload() {
         if (selectedFile) {
             setFile(selectedFile);
             setPreview(URL.createObjectURL(selectedFile));
+            setUploadStatus({ type: '', message: '' });
         }
     };
 
     const handleUpload = async () => {
         if (!file || !category) {
-            alert('Please select category and image');
+            setUploadStatus({ type: 'error', message: 'Please select category and image before publishing.' });
             return;
         }
 
@@ -56,12 +66,12 @@ function AdminUpload() {
                 throw new Error(data.message || 'Upload failed');
             }
 
-            alert('Image uploaded successfully');
+            setUploadStatus({ type: 'success', message: 'Image uploaded and published successfully.' });
             setFile(null);
             setPreview(null);
             setCategory('');
         } catch (error) {
-            alert(error.message || 'Upload failed');
+            setUploadStatus({ type: 'error', message: error.message || 'Upload failed' });
         } finally {
             setLoading(false);
         }
@@ -72,27 +82,111 @@ function AdminUpload() {
             <Paper
                 elevation={0}
                 sx={{
-                    p: { xs: 2, md: 3 },
-                    borderRadius: 3,
-                    border: '1px solid rgba(0,0,0,0.08)',
-                    background: 'linear-gradient(180deg, #fff8f0 0%, #ffffff 65%)',
+                    p: { xs: 2, md: 3.5 },
+                    borderRadius: 4,
+                    border: '1px solid rgba(15, 23, 42, 0.12)',
+                    background: 'linear-gradient(160deg, #f8fafc 0%, #ffffff 45%, #eef2ff 100%)',
                 }}
             >
-                <Typography variant="h5" sx={{ fontWeight: 700, textAlign: 'center' }}>
-                    Admin Image Upload
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5, mb: 2.5, textAlign: 'center' }}>
-                    Choose a category, select an image, and publish it to the gallery.
-                </Typography>
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: { xs: 2, md: 2.5 },
+                        borderRadius: 3,
+                        border: '1px solid rgba(30, 64, 175, 0.22)',
+                        background: 'linear-gradient(140deg, #0f172a 0%, #1e293b 55%, #1d4ed8 100%)',
+                        color: '#e2e8f0',
+                        mb: 2,
+                    }}
+                >
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
+                        <Box>
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                                <AdminPanelSettingsRoundedIcon sx={{ color: '#93c5fd' }} />
+                                <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                                    Admin Console
+                                </Typography>
+                            </Stack>
+                            <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
+                                Manage gallery uploads and moderation actions from one control panel.
+                            </Typography>
+                        </Box>
 
-                <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
-                    <Button variant="text" onClick={() => navigate('/admin/blocked-images')}>
-                        View Blocked Images
-                    </Button>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2}>
+                            <Button
+                                variant="contained"
+                                startIcon={<ReportProblemRoundedIcon />}
+                                onClick={() => navigate('/admin/blocked-images')}
+                                sx={{
+                                    backgroundColor: '#f59e0b',
+                                    color: '#111827',
+                                    fontWeight: 700,
+                                    '&:hover': { backgroundColor: '#fbbf24' },
+                                }}
+                            >
+                                Review Blocked Images
+                            </Button>
+                        </Stack>
+                    </Stack>
+                </Paper>
+
+                <Grid container spacing={1.5} sx={{ mb: 2 }}>
+                    <Grid item xs={12} md={4}>
+                        <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2.5, border: '1px solid rgba(15, 23, 42, 0.08)' }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <CategoryRoundedIcon sx={{ color: '#0f766e' }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: '#64748b' }}>Active Categories</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{DEFAULT_CATEGORY.length}</Typography>
+                                </Box>
+                            </Stack>
+                        </Paper>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                        <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2.5, border: '1px solid rgba(15, 23, 42, 0.08)' }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <ImageRoundedIcon sx={{ color: '#2563eb' }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: '#64748b' }}>Selected Image</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{file ? 'Ready' : 'Not Selected'}</Typography>
+                                </Box>
+                            </Stack>
+                        </Paper>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                        <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2.5, border: '1px solid rgba(15, 23, 42, 0.08)' }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <CategoryRoundedIcon sx={{ color: '#7c3aed' }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: '#64748b' }}>Selected Category</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{category || 'Not Selected'}</Typography>
+                                </Box>
+                            </Stack>
+                        </Paper>
+                    </Grid>
+                </Grid>
+
+                {uploadStatus.message && (
+                    <Alert severity={uploadStatus.type || 'info'} sx={{ mb: 2 }}>
+                        {uploadStatus.message}
+                    </Alert>
+                )}
+
+                <Divider sx={{ mb: 2 }} />
+
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        Publish New Gallery Image
+                    </Typography>
+                    <Chip
+                        label={loading ? 'Uploading...' : 'Ready'}
+                        color={loading ? 'warning' : 'success'}
+                        size="small"
+                    />
                 </Stack>
 
-                <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={6} flexGrow={1}>
+                <Grid container spacing={2}>
+                    <Grid item xs={12} md={7}>
                         <FormControl fullWidth>
                             <InputLabel id="select-category-label">Category</InputLabel>
                             <Select
@@ -108,16 +202,27 @@ function AdminUpload() {
                                 ))}
                             </Select>
                         </FormControl>
-                    </Grid>
 
-                    <Grid item xs={12} md={3}>
                         <Button
                             variant="outlined"
                             component="label"
                             fullWidth
-                            sx={{ p: 2, borderColor: '#f97316', color: '#c2410c' }}
+                            sx={{
+                                mt: 2,
+                                p: 2.4,
+                                borderStyle: 'dashed',
+                                borderWidth: 2,
+                                borderColor: file ? '#059669' : '#334155',
+                                color: file ? '#047857' : '#1e293b',
+                                backgroundColor: file ? '#ecfdf5' : '#f8fafc',
+                                fontWeight: 700,
+                                '&:hover': {
+                                    borderColor: file ? '#047857' : '#0f172a',
+                                    backgroundColor: file ? '#dcfce7' : '#f1f5f9',
+                                },
+                            }}
                         >
-                            Choose Image
+                            {file ? `Selected: ${file.name}` : 'Choose Image File'}
                             <input
                                 type="file"
                                 hidden
@@ -125,49 +230,75 @@ function AdminUpload() {
                                 onChange={handleFileChange}
                             />
                         </Button>
-                    </Grid>
 
-                    <Grid item xs={12} md={3}>
                         <Button
                             variant="contained"
                             fullWidth
-                            sx={{ p: 2, backgroundColor: '#0f766e' }}
+                            sx={{
+                                mt: 1.5,
+                                p: 1.6,
+                                background: 'linear-gradient(90deg, #0f766e 0%, #0891b2 100%)',
+                                fontWeight: 800,
+                                '&:hover': {
+                                    background: 'linear-gradient(90deg, #0d9488 0%, #0e7490 100%)',
+                                },
+                            }}
                             onClick={handleUpload}
                             disabled={loading}
                         >
-                            {loading ? 'Uploading...' : 'Upload Image'}
+                            {loading ? 'Uploading...' : 'Publish Image'}
                         </Button>
                     </Grid>
-                </Grid>
 
-                {preview && (
-                    <Box
-                        sx={{
-                            mt: 3,
-                            pt: 2,
-                            borderTop: '1px solid rgba(0,0,0,0.08)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                        }}
-                    >
-                        <Typography variant="subtitle1">Preview</Typography>
-                        <Box
-                            component="img"
-                            src={preview}
-                            alt="preview"
+                    <Grid item xs={12} md={5}>
+                        <Paper
+                            elevation={0}
                             sx={{
-                                mt: 1,
-                                width: '100%',
-                                height: 320,
-                                objectFit: 'contain',
+                                p: 1.5,
                                 borderRadius: 2,
-                                backgroundColor: '#f8fafc',
-                                border: '1px solid rgba(15, 23, 42, 0.08)',
+                                border: '1px solid rgba(15, 23, 42, 0.1)',
+                                backgroundColor: '#ffffff',
+                                minHeight: 260,
                             }}
-                        />
-                    </Box>
-                )}
+                        >
+                            <Typography variant="subtitle2" sx={{ color: '#334155', fontWeight: 700, mb: 1 }}>
+                                Preview
+                            </Typography>
+
+                            {preview ? (
+                                <Box
+                                    component="img"
+                                    src={preview}
+                                    alt="preview"
+                                    sx={{
+                                        width: '100%',
+                                        height: 250,
+                                        objectFit: 'contain',
+                                        borderRadius: 1.5,
+                                        border: '1px solid rgba(15, 23, 42, 0.08)',
+                                        backgroundColor: '#f8fafc',
+                                    }}
+                                />
+                            ) : (
+                                <Box
+                                    sx={{
+                                        height: 250,
+                                        borderRadius: 1.5,
+                                        border: '1px dashed rgba(15, 23, 42, 0.22)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#64748b',
+                                        textAlign: 'center',
+                                        px: 2,
+                                    }}
+                                >
+                                    Select an image to see preview before publishing.
+                                </Box>
+                            )}
+                        </Paper>
+                    </Grid>
+                </Grid>
             </Paper>
         </Box>
     );
