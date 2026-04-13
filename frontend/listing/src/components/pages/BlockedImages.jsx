@@ -39,6 +39,11 @@ function BlockedImages() {
     imageUrl: '',
     title: '',
   });
+  const [messageDialog, setMessageDialog] = useState({
+    open: false,
+    message: '',
+    reporter: '',
+  });
 
   useEffect(() => {
     const fetchBlockedImages = async () => {
@@ -92,6 +97,18 @@ function BlockedImages() {
 
   const handleClosePreview = () => {
     setPreviewDialog({ open: false, imageUrl: '', title: '' });
+  };
+
+  const handleOpenMessage = (item) => {
+    setMessageDialog({
+      open: true,
+      message: item?.message || '-',
+      reporter: item?.name || 'Unknown reporter',
+    });
+  };
+
+  const handleCloseMessage = () => {
+    setMessageDialog({ open: false, message: '', reporter: '' });
   };
 
   return (
@@ -186,7 +203,12 @@ function BlockedImages() {
                   <TableCell>{item.name || '-'}</TableCell>
                   <TableCell sx={{ minWidth: 190 }}>{item.email || '-'}</TableCell>
                   <TableCell sx={{ minWidth: 240, maxWidth: 320 }}>
-                    <Typography variant="body2" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.message || ''}>
+                    <Typography
+                      variant="body2"
+                      onClick={() => handleOpenMessage(item)}
+                      sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer'}}
+                      title="Click to view full message"
+                    >
                       {item.message || '-'}
                     </Typography>
                   </TableCell>
@@ -237,6 +259,21 @@ function BlockedImages() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClosePreview}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={messageDialog.open} onClose={handleCloseMessage} fullWidth maxWidth="sm">
+        <DialogTitle>Reported Message</DialogTitle>
+        <DialogContent>
+          <Typography variant="subtitle2" sx={{ mb: 1, color: '#475569' }}>
+            Reporter: {messageDialog.reporter}
+          </Typography>
+          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+            {messageDialog.message}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseMessage}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
