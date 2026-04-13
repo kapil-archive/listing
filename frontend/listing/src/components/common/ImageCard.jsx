@@ -13,7 +13,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import ReportIcon from '@mui/icons-material/Report';
 
 
-const ImageCard = React.memo(({ item, onAction,setOpenAd }) => {
+const ImageCard = React.memo(({ item, onAction, setOpenAd, onReport }) => {
     return (
         <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid rgba(15, 23, 42, 0.08)', height: '100%', display: 'flex', flexDirection: 'column' }}>
             {item.thumbUrl && (
@@ -79,7 +79,7 @@ const ImageCard = React.memo(({ item, onAction,setOpenAd }) => {
                     </Box>
 
                     <Box sx={{ ml: 'auto' }}>
-                        <IconButton aria-label="report image" size="small" sx={{ p: 0.5 }}>
+                        <IconButton aria-label="report image" size="small" sx={{ p: 0.5 }} onClick={() => onReport(item)}>
                             <ReportIcon fontSize="small" color={"inherit"}/>
                         </IconButton>
                     </Box>

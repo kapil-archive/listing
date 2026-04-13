@@ -6,6 +6,7 @@ import Portal from '@mui/material/Portal';
 import { DEFAULT_CATEGORY } from './AdminUpload';
 import ImageCard from '../common/ImageCard';
 import AdDialog from '../common/AdDialog';
+import ReportDialog from '../common/ReportDialog';
 import { downloadBase64Image } from '../common/utils';
 import Button from '@mui/material/Button';
 const apiUrl = import.meta.env.VITE_BASE_URL;
@@ -17,6 +18,7 @@ function ImagesList() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [openAd, setOpenAd] = useState({ imageId: null, active: false });
+    const [reportDialog, setReportDialog] = useState({ active: false, item: null });
     const openAdRef = useRef(openAd);
     const hasTrackedCurrentModalRef = useRef(false);
     const [pageDetail, setPageDetail] = useState({
@@ -179,6 +181,10 @@ function ImagesList() {
         setSelectedCategory(categoryName);
     }, []);
 
+    const handleReportClick = useCallback((item) => {
+        setReportDialog({ active: true, item });
+    }, []);
+
     return (
         <Box sx={{ p: { xs: 1, md: 2 }, pb: { xs: 14, md: 12 } }}>
             <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2, textAlign: 'center' }}>
@@ -187,6 +193,11 @@ function ImagesList() {
 
             {/* Ads Dialog */}
             <AdDialog openAd={openAd} setOpenAd={setOpenAd} />
+            <ReportDialog
+                reportDialog={reportDialog}
+                setReportDialog={setReportDialog}
+                onSuccess={() => setError('')}
+            />
 
             <div>
                 <Chip
@@ -244,7 +255,7 @@ function ImagesList() {
                             justifySelf: 'start',
                         }}
                     >
-                        <ImageCard item={item} onAction={handleImageStats} setOpenAd={setOpenAd} />
+                        <ImageCard item={item} onAction={handleImageStats} setOpenAd={setOpenAd} onReport={handleReportClick} />
                     </Box>
                 ))}
             </Box>

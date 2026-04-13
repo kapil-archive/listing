@@ -2,6 +2,7 @@
 
 const Image = require("../models/image.model");
 const Category = require("../models/category.model");
+const Report = require("../models/report.model");
 const mongoose = require("mongoose");
 const sharp = require("sharp");
 
@@ -97,6 +98,7 @@ const getAllImages = async (req, res) => {
             {
               $project: {
                 _id: 1,
+                categoryId: 1,
                 fileName: 1,
                 size: 1,
                 createdAt: 1,
@@ -118,9 +120,14 @@ const getAllImages = async (req, res) => {
     const total = result.metadata[0]?.total || 0;
     const images = result.data || [];
 
+    console.log("images -- ",images[0]);
+    
+
     // Format images with base64 conversion only for thumb
     const formattedImages = images.map((item) => ({
+      imageId: item._id,
       _id: item._id,
+      categoryId: item.categoryId,
       fileName: item.fileName,
       size: item.size,
       category: item.category,
@@ -195,4 +202,55 @@ const updateImageStats = async (req, res) => {
 // db.images.createIndex({ categoryId: 1 })
 // db.categories.createIndex({ name: 1 })
 
-module.exports = { uploadImage, getAllImages, updateImageStats };
+
+// report image
+const reportImage = async (req, res) => {
+  try {
+    const { categoryId, imageId } = req.body || {};
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Supporting image is required" });
+    }
+
+    if (!categoryId || !mongoose.Types.ObjectId.isValid(categoryId)) {
+      return res.status(400).json({ message: "Invalid categoryId" });
+    }
+
+    if (!imageId || !mongoose.Types.ObjectId.isValid(imageId)) {
+      return res.status(400).json({ message: "Invalid imageId" });
+    }
+
+    const category = await Category.findById(categoryId).select("_id");
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    const image = await Image.findOne({ _id: imageId, categoryId }).select("_id");
+    if (!image) {
+      return res.status(404).json({ message: "Image not found for this category" });
+    }
+
+    const reportPayload = {
+      categoryId,
+      imageId,
+      image: {
+        data: req.file.buffer,
+        contentType: req.file.mimetype,
+      },
+      fileName: req.file.originalname,
+      size: req.file.size,
+    };
+
+    await Report.create(reportPayload);
+
+    res.status(200).json({
+      success: true,
+      message: "Image reported successfully",
+    });
+  } catch (err) {
+    console.error("Reporting image failed:", err);
+    res.status(500).json({ message: err.message });
+  }
+}
+
+module.exports = { uploadImage, getAllImages, updateImageStats, reportImage };
