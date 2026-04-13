@@ -208,10 +208,6 @@ const reportImage = async (req, res) => {
   try {
     const { categoryId, imageId, name, email, message } = req.body || {};
 
-    if (!req.file) {
-      return res.status(400).json({ message: "Supporting image is required" });
-    }
-
     if (!categoryId || !mongoose.Types.ObjectId.isValid(categoryId)) {
       return res.status(400).json({ message: "Invalid categoryId" });
     }
@@ -252,13 +248,16 @@ const reportImage = async (req, res) => {
       name: trimmedName,
       email: trimmedEmail,
       message: trimmedMessage,
-      image: {
+    };
+
+    if (req.file) {
+      reportPayload.image = {
         data: req.file.buffer,
         contentType: req.file.mimetype,
-      },
-      fileName: req.file.originalname,
-      size: req.file.size,
-    };
+      };
+      reportPayload.fileName = req.file.originalname;
+      reportPayload.size = req.file.size;
+    }
 
     await Report.create(reportPayload);
 

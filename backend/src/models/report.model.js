@@ -31,23 +31,15 @@ const reportSchema = new mongoose.Schema(
       trim: true,
     },
     image: {
-      data: {
-        type: Buffer,
-        required: true,
-      },
-      contentType: {
-        type: String,
-        required: true,
-      },
+      data: Buffer,
+      contentType: String,
     },
     fileName: {
       type: String,
-      required: true,
       trim: true,
     },
     size: {
       type: Number,
-      required: true,
     },
   },
   { timestamps: true }

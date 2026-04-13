@@ -152,12 +152,6 @@ function BlockedImages() {
         </Stack>
       </Paper>
 
-      <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
-        <Chip label={`Total Reports: ${pageDetail.total}`} color="error" variant="outlined" />
-        <Chip label={`Current Page: ${pageDetail.currentPage}`} color="primary" variant="outlined" />
-        <Chip label={`Pages: ${pageDetail.totalPages}`} color="secondary" variant="outlined" />
-      </Stack>
-
       {loading && <Alert severity="info">Loading blocked images...</Alert>}
       {!loading && error && <Alert severity="error">{error}</Alert>}
       {!loading && !error && items.length === 0 && <Alert severity="warning">No blocked images found.</Alert>}

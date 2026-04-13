@@ -76,11 +76,6 @@ function ReportDialog({ reportDialog, setReportDialog, onSuccess }) {
             return;
         }
 
-        if (!file) {
-            setError('Supporting image is required.');
-            return;
-        }
-
         const trimmedName = formValues.name.trim();
         const trimmedEmail = formValues.email.trim();
         const trimmedMessage = formValues.message.trim();
@@ -107,7 +102,10 @@ function ReportDialog({ reportDialog, setReportDialog, onSuccess }) {
             formData.append('name', trimmedName);
             formData.append('email', trimmedEmail);
             formData.append('message', trimmedMessage);
-            formData.append('image', file);
+
+            if (file) {
+                formData.append('image', file);
+            }
 
             const res = await fetch(`${apiUrl}/api/images/report`, {
                 method: 'POST',
@@ -182,7 +180,7 @@ function ReportDialog({ reportDialog, setReportDialog, onSuccess }) {
                     />
 
                     <Button variant="outlined" component="label" color={file ? 'success' : 'primary'}>
-                        {file ? 'Change Supporting Image' : 'Upload Supporting Image'}
+                        {file ? 'Change Supporting Image (Optional)' : 'Upload Supporting Image (Optional)'}
                         <input type="file" hidden accept="image/*" onChange={handleFileChange} />
                     </Button>
 
