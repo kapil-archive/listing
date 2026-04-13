@@ -49,7 +49,13 @@ function AppHeader() {
         }}
       >
         <Toolbar sx={{ px: { xs: 1.5, md: 2 } }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ flexGrow: 1, cursor: 'pointer' }}
+            onClick={() => handleNavigate('/images')}
+          >
             <CategoryRoundedIcon sx={{ color: '#0f766e' }} />
             <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.3 }}>
               Category Hub
