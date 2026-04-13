@@ -10,6 +10,8 @@ import CardActions from '@mui/material/CardActions';
 import IconButton from '@mui/material/IconButton';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import ReportIcon from '@mui/icons-material/Report';
+
 
 const ImageCard = React.memo(({ item, onAction,setOpenAd }) => {
     return (
@@ -74,6 +76,12 @@ const ImageCard = React.memo(({ item, onAction,setOpenAd }) => {
                         <Typography variant="caption">
                             {item.downloadCount || 0} Download
                         </Typography>
+                    </Box>
+
+                    <Box sx={{ ml: 'auto' }}>
+                        <IconButton aria-label="report image" size="small" sx={{ p: 0.5 }}>
+                            <ReportIcon fontSize="small" color={"inherit"}/>
+                        </IconButton>
                     </Box>
                 </Box>
             </CardActions>
