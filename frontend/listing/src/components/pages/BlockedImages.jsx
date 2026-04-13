@@ -5,6 +5,10 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -29,6 +33,11 @@ function BlockedImages() {
     currentPage: 1,
     totalPages: 1,
     total: 0,
+  });
+  const [previewDialog, setPreviewDialog] = useState({
+    open: false,
+    imageUrl: '',
+    title: '',
   });
 
   useEffect(() => {
@@ -67,6 +76,22 @@ function BlockedImages() {
       }
       return { ...prev, currentPage: nextPage };
     });
+  };
+
+  const handleOpenPreview = (item) => {
+    if (!item?.reportImageUrl) {
+      return;
+    }
+
+    setPreviewDialog({
+      open: true,
+      imageUrl: item.reportImageUrl,
+      title: item.fileName || 'Preview image',
+    });
+  };
+
+  const handleClosePreview = () => {
+    setPreviewDialog({ open: false, imageUrl: '', title: '' });
   };
 
   return (
@@ -153,6 +178,7 @@ function BlockedImages() {
                       variant="rounded"
                       src={item.reportImageUrl || ''}
                       alt={item.fileName || 'report image'}
+                      onClick={() => handleOpenPreview(item)}
                       sx={{ width: 46, height: 46, border: '1px solid rgba(15, 23, 42, 0.1)' }}
                     />
                   </TableCell>
@@ -198,6 +224,21 @@ function BlockedImages() {
           </Button>
         </Box>
       )}
+
+      <Dialog open={previewDialog.open} onClose={handleClosePreview} fullWidth maxWidth="md">
+        <DialogTitle>{previewDialog.title}</DialogTitle>
+        <DialogContent>
+          <Box
+            component="img"
+            src={previewDialog.imageUrl}
+            alt={previewDialog.title || 'report preview image'}
+            sx={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePreview}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
