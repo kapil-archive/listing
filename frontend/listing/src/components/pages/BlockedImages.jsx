@@ -44,6 +44,12 @@ function BlockedImages() {
     message: '',
     reporter: '',
   });
+  const [originalDialog, setOriginalDialog] = useState({
+    open: false,
+    imageUrl: '',
+    title: '',
+  });
+  const [originalLoadingId, setOriginalLoadingId] = useState('');
 
   useEffect(() => {
     const fetchBlockedImages = async () => {
@@ -109,6 +115,39 @@ function BlockedImages() {
 
   const handleCloseMessage = () => {
     setMessageDialog({ open: false, message: '', reporter: '' });
+  };
+
+  const handleOpenOriginal = async (item) => {
+    if (!item?.imageId) {
+      setError('Invalid image id for original preview.');
+      return;
+    }
+
+    try {
+      setOriginalLoadingId(item.imageId);
+      setError('');
+
+      const res = await fetch(`${apiUrl}/api/images/${item.imageId}/original`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to fetch original image');
+      }
+
+      setOriginalDialog({
+        open: true,
+        imageUrl: data?.data?.originalImage || '',
+        title: data?.data?.fileName || item.fileName || 'Original image',
+      });
+    } catch (err) {
+      setError(err.message || 'Failed to fetch original image');
+    } finally {
+      setOriginalLoadingId('');
+    }
+  };
+
+  const handleCloseOriginal = () => {
+    setOriginalDialog({ open: false, imageUrl: '', title: '' });
   };
 
   return (
@@ -179,6 +218,7 @@ function BlockedImages() {
                 <TableCell sx={{ fontWeight: 700 }}>Image ID</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Category ID</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Reported On</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Action</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -219,6 +259,16 @@ function BlockedImages() {
                   </TableCell>
                   <TableCell sx={{ minWidth: 160 }}>
                     {item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => handleOpenOriginal(item)}
+                      disabled={originalLoadingId === item.imageId}
+                    >
+                      {originalLoadingId === item.imageId ? 'Loading...' : 'View Original'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -268,6 +318,21 @@ function BlockedImages() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseMessage}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={originalDialog.open} onClose={handleCloseOriginal} fullWidth maxWidth="md">
+        <DialogTitle>{originalDialog.title || 'Original image'}</DialogTitle>
+        <DialogContent>
+          <Box
+            component="img"
+            src={originalDialog.imageUrl}
+            alt={originalDialog.title || 'original image'}
+            sx={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseOriginal}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

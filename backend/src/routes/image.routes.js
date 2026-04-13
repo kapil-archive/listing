@@ -1,5 +1,5 @@
 
-const { uploadImage, getAllImages, updateImageStats, reportImage, getBlockedImages } = require("../controllers/image.controller");
+const { uploadImage, getAllImages, updateImageStats, getOriginalImage, reportImage, getBlockedImages } = require("../controllers/image.controller");
 const { upload } = require("../middlewares/upload.middleware");
 
 const express = require("express");
@@ -10,6 +10,7 @@ router.post("/upload", upload.single("image"), uploadImage);
 router.post("/report", upload.single("image"), reportImage);
 router.get("/", getAllImages);
 router.get("/blocked", getBlockedImages);
+router.get("/:imageId/original", getOriginalImage);
 router.put("/updateStats", updateImageStats);
 
 module.exports = router;

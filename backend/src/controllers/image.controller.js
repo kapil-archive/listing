@@ -196,6 +196,42 @@ const updateImageStats = async (req, res) => {
   }
 }
 
+const getOriginalImage = async (req, res) => {
+  try {
+    const { imageId } = req.params || {};
+
+    if (!imageId || !mongoose.Types.ObjectId.isValid(imageId)) {
+      return res.status(400).json({ message: "Invalid imageId" });
+    }
+
+    const image = await Image.findById(imageId).select("image fileName");
+
+    if (!image) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    const originalImage = image.image?.data && image.image?.contentType
+      ? `data:${image.image.contentType};base64,${image.image.data.toString("base64")}`
+      : null;
+
+    if (!originalImage) {
+      return res.status(404).json({ message: "Original image not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        imageId,
+        fileName: image.fileName,
+        originalImage,
+      },
+    });
+  } catch (err) {
+    console.error("Fetching original image failed:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // Ensure database indexes for optimal query performance
 // Add these indexes to your MongoDB:
 // db.images.createIndex({ createdAt: -1 })
@@ -348,4 +384,4 @@ const getBlockedImages = async (req, res) => {
   }
 };
 
-module.exports = { uploadImage, getAllImages, updateImageStats, reportImage, getBlockedImages };
+module.exports = { uploadImage, getAllImages, updateImageStats, getOriginalImage, reportImage, getBlockedImages };
