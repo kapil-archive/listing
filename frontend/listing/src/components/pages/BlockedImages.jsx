@@ -227,7 +227,7 @@ function BlockedImages() {
                   <TableCell>
                     <Avatar
                       variant="rounded"
-                      src={item.reportImageUrl || ''}
+                      src={item.reportImageUrl || null}
                       alt={item.fileName || 'report image'}
                       onClick={() => handleOpenPreview(item)}
                       sx={{ width: 46, height: 46, border: '1px solid rgba(15, 23, 42, 0.1)' }}
@@ -294,12 +294,14 @@ function BlockedImages() {
       <Dialog open={previewDialog.open} onClose={handleClosePreview} fullWidth maxWidth="md">
         <DialogTitle>{previewDialog.title}</DialogTitle>
         <DialogContent>
-          <Box
-            component="img"
-            src={previewDialog.imageUrl}
-            alt={previewDialog.title || 'report preview image'}
-            sx={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 1 }}
-          />
+          {previewDialog.imageUrl ? (
+            <Box
+              component="img"
+              src={previewDialog.imageUrl}
+              alt={previewDialog.title || 'report preview image'}
+              sx={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 1 }}
+            />
+          ) : null}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClosePreview}>Close</Button>
@@ -324,12 +326,14 @@ function BlockedImages() {
       <Dialog open={originalDialog.open} onClose={handleCloseOriginal} fullWidth maxWidth="md">
         <DialogTitle>{originalDialog.title || 'Original image'}</DialogTitle>
         <DialogContent>
-          <Box
-            component="img"
-            src={originalDialog.imageUrl}
-            alt={originalDialog.title || 'original image'}
-            sx={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 1 }}
-          />
+          {originalDialog.imageUrl ? (
+            <Box
+              component="img"
+              src={originalDialog.imageUrl}
+              alt={originalDialog.title || 'original image'}
+              sx={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 1 }}
+            />
+          ) : null}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseOriginal}>Close</Button>
