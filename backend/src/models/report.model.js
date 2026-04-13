@@ -14,6 +14,22 @@ const reportSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
+    message: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     image: {
       data: {
         type: Buffer,
@@ -27,6 +43,7 @@ const reportSchema = new mongoose.Schema(
     fileName: {
       type: String,
       required: true,
+      trim: true,
     },
     size: {
       type: Number,

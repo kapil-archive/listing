@@ -92,6 +92,15 @@ function BlockedImages() {
                   Category: {item.category}
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#475569' }}>
+                  Reporter: {item.name}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#475569' }}>
+                  Email: {item.email}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#475569' }}>
+                  Message: {item.message}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#475569' }}>
                   Image ID: {item.imageId}
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#475569' }}>

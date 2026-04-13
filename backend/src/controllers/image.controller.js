@@ -206,7 +206,7 @@ const updateImageStats = async (req, res) => {
 // report image
 const reportImage = async (req, res) => {
   try {
-    const { categoryId, imageId } = req.body || {};
+    const { categoryId, imageId, name, email, message } = req.body || {};
 
     if (!req.file) {
       return res.status(400).json({ message: "Supporting image is required" });
@@ -218,6 +218,22 @@ const reportImage = async (req, res) => {
 
     if (!imageId || !mongoose.Types.ObjectId.isValid(imageId)) {
       return res.status(400).json({ message: "Invalid imageId" });
+    }
+
+    const trimmedName = name?.trim();
+    const trimmedEmail = email?.trim().toLowerCase();
+    const trimmedMessage = message?.trim();
+
+    if (!trimmedName) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    if (!trimmedEmail) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    if (!trimmedMessage) {
+      return res.status(400).json({ message: "Message is required" });
     }
 
     const category = await Category.findById(categoryId).select("_id");
@@ -233,6 +249,9 @@ const reportImage = async (req, res) => {
     const reportPayload = {
       categoryId,
       imageId,
+      name: trimmedName,
+      email: trimmedEmail,
+      message: trimmedMessage,
       image: {
         data: req.file.buffer,
         contentType: req.file.mimetype,
@@ -280,6 +299,9 @@ const getBlockedImages = async (req, res) => {
                 _id: 1,
                 imageId: 1,
                 categoryId: 1,
+                name: 1,
+                email: 1,
+                message: 1,
                 fileName: 1,
                 size: 1,
                 createdAt: 1,
@@ -302,6 +324,9 @@ const getBlockedImages = async (req, res) => {
       reportId: item._id,
       imageId: item.imageId,
       categoryId: item.categoryId,
+      name: item.name,
+      email: item.email,
+      message: item.message,
       fileName: item.fileName,
       size: item.size,
       category: item.category,
