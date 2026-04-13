@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from 'react';
+import Alert from '@mui/material/Alert';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Grid from '@mui/material/Grid';
+import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import { useNavigate } from 'react-router-dom';
 
 const apiUrl = import.meta.env.VITE_BASE_URL;
@@ -61,59 +71,119 @@ function BlockedImages() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          Blocked Images
-        </Typography>
-        <Button variant="outlined" onClick={() => navigate('/admin')}>
-          Back To Admin
-        </Button>
-      </Box>
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, md: 2.5 },
+          borderRadius: 3,
+          border: '1px solid rgba(30, 64, 175, 0.2)',
+          background: 'linear-gradient(140deg, #0f172a 0%, #1e293b 55%, #1d4ed8 100%)',
+          color: '#e2e8f0',
+          mb: 2,
+        }}
+      >
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
+          <Box>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+              <ShieldRoundedIcon sx={{ color: '#93c5fd' }} />
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                Moderation Queue
+              </Typography>
+            </Stack>
+            <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
+              Review all blocked image reports in a centralized admin table.
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<ArrowBackRoundedIcon />}
+            onClick={() => navigate('/admin')}
+            sx={{
+              backgroundColor: '#f8fafc',
+              color: '#0f172a',
+              fontWeight: 700,
+              '&:hover': { backgroundColor: '#e2e8f0' },
+            }}
+          >
+            Back To Admin
+          </Button>
+        </Stack>
+      </Paper>
 
-      {loading && <Typography>Loading blocked images...</Typography>}
-      {error && <Typography color="error">{error}</Typography>}
+      <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
+        <Chip label={`Total Reports: ${pageDetail.total}`} color="error" variant="outlined" />
+        <Chip label={`Current Page: ${pageDetail.currentPage}`} color="primary" variant="outlined" />
+        <Chip label={`Pages: ${pageDetail.totalPages}`} color="secondary" variant="outlined" />
+      </Stack>
 
-      {!loading && !error && items.length === 0 && (
-        <Typography>No blocked images found.</Typography>
-      )}
+      {loading && <Alert severity="info">Loading blocked images...</Alert>}
+      {!loading && error && <Alert severity="error">{error}</Alert>}
+      {!loading && !error && items.length === 0 && <Alert severity="warning">No blocked images found.</Alert>}
 
-      <Grid container spacing={2}>
-        {items.map((item) => (
-          <Grid item xs={12} sm={6} md={4} key={item.reportId}>
-            <Card sx={{ height: '100%', border: '1px solid rgba(15, 23, 42, 0.08)' }}>
-              {item.reportImageUrl && (
-                <CardMedia component="img" image={item.reportImageUrl} alt={item.fileName || 'blocked image'} sx={{ height: 220, objectFit: 'cover' }} />
-              )}
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {item.fileName || 'Supporting image'}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#475569', mt: 0.5 }}>
-                  Category: {item.category}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#475569' }}>
-                  Reporter: {item.name}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#475569' }}>
-                  Email: {item.email}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#475569' }}>
-                  Message: {item.message}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#475569' }}>
-                  Image ID: {item.imageId}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#475569' }}>
-                  Category ID: {item.categoryId}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 1 }}>
-                  Reported On: {new Date(item.createdAt).toLocaleString()}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Paper elevation={0} sx={{ border: '1px solid rgba(15, 23, 42, 0.1)', borderRadius: 2, overflow: 'hidden', mt: 2 }}>
+        <Box sx={{ px: 2, py: 1.5, backgroundColor: '#f8fafc' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a' }}>
+            Blocked Images Table
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#64748b' }}>
+            Includes reporter details, message, and linked image metadata.
+          </Typography>
+        </Box>
+        <Divider />
+        <TableContainer sx={{ maxHeight: '68vh' }}>
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700 }}>Preview</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>File</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Reporter</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Message</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Image ID</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Category ID</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Reported On</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {items.map((item) => (
+                <TableRow hover key={item.reportId}>
+                  <TableCell>
+                    <Avatar
+                      variant="rounded"
+                      src={item.reportImageUrl || ''}
+                      alt={item.fileName || 'report image'}
+                      sx={{ width: 46, height: 46, border: '1px solid rgba(15, 23, 42, 0.1)' }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 170 }}>{item.fileName || 'Supporting image'}</TableCell>
+                  <TableCell>{item.name || '-'}</TableCell>
+                  <TableCell sx={{ minWidth: 190 }}>{item.email || '-'}</TableCell>
+                  <TableCell sx={{ minWidth: 240, maxWidth: 320 }}>
+                    <Typography variant="body2" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.message || ''}>
+                      {item.message || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{item.category || '-'}</TableCell>
+                  <TableCell sx={{ maxWidth: 180 }}>
+                    <Typography variant="caption" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }} title={item.imageId || ''}>
+                      {item.imageId || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ maxWidth: 180 }}>
+                    <Typography variant="caption" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }} title={item.categoryId || ''}>
+                      {item.categoryId || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 160 }}>
+                    {item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
       {!loading && !error && pageDetail.total > 0 && (
         <Box sx={{ mt: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, flexWrap: 'wrap' }}>
