@@ -6,6 +6,8 @@ import AdminUpload from './components/pages/AdminUpload';
 import ImagesList from './components/pages/ImagesList';
 import FillForm from './components/pages/FillForm';
 import BlockedImages from './components/pages/BlockedImages';
+import PrivacyPolicy from './components/pages/PrivacyPolicy';
+import TermsAndConditions from './components/pages/TermsAndConditions';
 import AppHeader from './components/common/AppHeader';
 import AppFooter from './components/common/AppFooter';
 
@@ -22,6 +24,8 @@ function App() {
               <Route path="/admin/blocked-images" element={<BlockedImages />} />
               <Route path="/images" element={<ImagesList />} />
               <Route path="/fill-form" element={<FillForm />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
             </Routes>
           </Box>
         </Box>

@@ -8,12 +8,12 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 const QUICK_LINKS = [
   { label: 'Images', path: '/images' },
-  { label: 'Fill Form', path: '/fill-form' },
+  { label: 'Contact US', path: '/fill-form' },
 ];
 
 const LEGAL_LINKS = [
-  { label: 'Privacy and policy', path: '/' },
-  { label: 'Terms and Conditions', path: '/' },
+  { label: 'Privacy and policy', path: '/privacy-policy' },
+  { label: 'Terms and Conditions', path: '/terms-and-conditions' },
   { label: 'Contact Us', path: '/fill-form' },
 ];
 

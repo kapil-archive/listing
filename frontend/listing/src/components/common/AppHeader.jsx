@@ -16,9 +16,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import InstallPWA from './InstallPWA';
 
 const NAV_OPTIONS = [
-  { label: 'Privacy and policy', path: '/' },
-  { label: 'Terms and Conditions', path: '/' },
-  { label: 'Fill Form', path: '/fill-form' },
+  { label: 'Privacy and policy', path: '/privacy-policy' },
+  { label: 'Terms and Conditions', path: '/terms-and-conditions' },
+  { label: 'Contact US', path: '/fill-form' },
 ];
 
 function AppHeader() {

@@ -3,6 +3,8 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
+import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
@@ -14,6 +16,10 @@ import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
+import HeadsetMicRoundedIcon from '@mui/icons-material/HeadsetMicRounded';
+import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded';
+import ContactMailRoundedIcon from '@mui/icons-material/ContactMailRounded';
 
 const CATEGORY_OPTIONS = ['Electronics', 'Fashion', 'Home', 'Books', 'Toys'];
 
@@ -61,25 +67,48 @@ function FillForm() {
 
   return (
     <Box sx={{ p: { xs: 1, md: 2 } }}>
-      <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, textAlign: 'center' }}>
-        Fill Form
-      </Typography>
-      <Typography variant="body1" sx={{ color: '#475569', mb: 3, textAlign: 'center' }}>
-        Share your details and request. We will review your submission and get back to you shortly.
-      </Typography>
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, md: 3 },
+          borderRadius: 3,
+          border: '1px solid rgba(30, 64, 175, 0.2)',
+          background: 'linear-gradient(140deg, #0f172a 0%, #1e293b 55%, #1d4ed8 100%)',
+          color: '#e2e8f0',
+          mb: 2,
+        }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <ContactMailRoundedIcon sx={{ color: '#93c5fd' }} />
+          <Typography variant="h5" sx={{ fontWeight: 800 }}>
+            Contact Us
+          </Typography>
+        </Stack>
+        <Typography variant="body2" sx={{ color: '#cbd5e1', maxWidth: 820 }}>
+          Share your requirements, questions, or feedback. Our support and moderation team will review your submission and respond as soon as possible.
+        </Typography>
+      </Paper>
 
-      <Grid container spacing={2.5} justifyContent="center">
-        <Grid item xs={12} md={9} lg={8}>
+      <Grid container spacing={2.5}>
+        <Grid item xs={12} md={8}>
           <Paper
             component="form"
             onSubmit={handleSubmit}
             sx={{
               p: { xs: 2, md: 3 },
               borderRadius: 3,
-              border: '1px solid rgba(15, 23, 42, 0.08)',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              border: '1px solid rgba(15, 23, 42, 0.1)',
+              backgroundColor: 'rgba(255, 255, 255, 0.92)',
             }}
           >
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Send A Request
+              </Typography>
+              <Chip size="small" color="info" variant="outlined" label="Response in 24-48 hours" />
+            </Stack>
+            <Divider sx={{ mb: 2 }} />
+
             <Stack spacing={2}>
               <TextField
                 label="Full Name"
@@ -137,29 +166,66 @@ function FillForm() {
                 value={formData.message}
                 onChange={handleChange}
                 multiline
-                minRows={4}
+                minRows={5}
                 fullWidth
                 required
               />
 
               <FormControlLabel
                 control={<Checkbox name="agree" checked={formData.agree} onChange={handleChange} />}
-                label="I confirm that the provided details are correct."
+                label="I confirm that the provided details are accurate and consent to being contacted."
               />
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button type="submit" variant="contained" size="large" disabled={isSubmitDisabled}>
-                  Submit Form
+                <Button type="submit" variant="contained" size="large" disabled={isSubmitDisabled} sx={{ px: 3, fontWeight: 700 }}>
+                  Submit Request
                 </Button>
               </Box>
             </Stack>
           </Paper>
         </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Stack spacing={1.5}>
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 2.5, border: '1px solid rgba(15, 23, 42, 0.1)' }}>
+              <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 0.5 }}>
+                <MailOutlineRoundedIcon sx={{ color: '#2563eb' }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Email Support</Typography>
+              </Stack>
+              <Typography variant="body2" sx={{ color: '#475569' }}>
+                support@categoryhub.app
+              </Typography>
+            </Paper>
+
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 2.5, border: '1px solid rgba(15, 23, 42, 0.1)' }}>
+              <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 0.5 }}>
+                <HeadsetMicRoundedIcon sx={{ color: '#0f766e' }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Phone Support</Typography>
+              </Stack>
+              <Typography variant="body2" sx={{ color: '#475569' }}>
+                +91 98765 43210
+              </Typography>
+            </Paper>
+
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 2.5, border: '1px solid rgba(15, 23, 42, 0.1)' }}>
+              <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 0.5 }}>
+                <ScheduleRoundedIcon sx={{ color: '#7c3aed' }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Working Hours</Typography>
+              </Stack>
+              <Typography variant="body2" sx={{ color: '#475569' }}>
+                Mon - Fri: 9:00 AM - 6:00 PM
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#475569' }}>
+                Sat: 10:00 AM - 2:00 PM
+              </Typography>
+            </Paper>
+          </Stack>
+        </Grid>
       </Grid>
 
       <Snackbar open={showSuccess} autoHideDuration={2500} onClose={() => setShowSuccess(false)}>
         <Alert severity="success" variant="filled" onClose={() => setShowSuccess(false)}>
-          Form submitted successfully.
+          Request submitted successfully.
         </Alert>
       </Snackbar>
     </Box>
