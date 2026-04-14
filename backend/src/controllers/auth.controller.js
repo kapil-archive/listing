@@ -19,16 +19,12 @@ const register = async (req, res) => {
             return errorHandler({ statusCode: 400, message: "Email already exists" }, req, res);
         }
 
-        const existingAdmin = await User.findOne({ isAdmin: true });
-        const adminSecret = process.env.ADMIN_REG_CODE;
-        const isAdmin = !existingAdmin || (adminSecret && req.body.adminCode === adminSecret);
-
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({
             name,
             email,
             password: hashedPassword,
-            isAdmin,
+            isAdmin: false,
         });
 
         await user.save();
@@ -57,17 +53,21 @@ const login = async (req, res) => {
     if (!isPasswordValid) {
         return errorHandler({ statusCode: 400, message: "Invalid email or password" }, req, res);
     }
+
+    if(!existingUser.isAdmin) {
+        return errorHandler({ statusCode: 403, message: "You dont have admin privileges" }, req, res);
+    }
+
     const token = generateToken(existingUser._id);
 
     res.status(200).json({
       message: "Login successful",
       token,
-      user: {
-        _id: existingUser._id,
-        name: existingUser.name,
-        email: existingUser.email,
-        isAdmin: existingUser.isAdmin,
-      },
+      user:{
+        isAdmin : existingUser.isAdmin,
+        name : existingUser.name,
+        email : existingUser.email,
+      }
     });
 };
 
