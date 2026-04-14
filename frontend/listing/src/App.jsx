@@ -6,6 +6,7 @@ import AdminUpload from './components/pages/AdminUpload';
 import ImagesList from './components/pages/ImagesList';
 import FillForm from './components/pages/FillForm';
 import BlockedImages from './components/pages/BlockedImages';
+import Login from './components/pages/Login';
 import PrivacyPolicy from './components/pages/PrivacyPolicy';
 import TermsAndConditions from './components/pages/TermsAndConditions';
 import AppHeader from './components/common/AppHeader';
@@ -20,6 +21,7 @@ function App() {
           <Box className="page-container">
             <Routes>
               <Route path="/" element={<Navigate to="/images" replace />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/admin" element={<AdminUpload />} />
               <Route path="/admin/blocked-images" element={<BlockedImages />} />
               <Route path="/images" element={<ImagesList />} />

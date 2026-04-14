@@ -119,9 +119,7 @@ const getAllImages = async (req, res) => {
 
     const total = result.metadata[0]?.total || 0;
     const images = result.data || [];
-
-    console.log("images -- ",images[0]);
-    
+   
 
     // Format images with base64 conversion only for thumb
     const formattedImages = images.map((item) => ({

@@ -3,6 +3,9 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import Portal from '@mui/material/Portal';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import { DEFAULT_CATEGORY } from './category.constants';
 import ImageCard from '../common/ImageCard';
 import AdDialog from '../common/AdDialog';
@@ -19,6 +22,7 @@ function ImagesList() {
     const [error, setError] = useState('');
     const [openAd, setOpenAd] = useState({ imageId: null, active: false });
     const [reportDialog, setReportDialog] = useState({ active: false, item: null });
+    const [previewDialog, setPreviewDialog] = useState({ open: false, imageUrl: '', title: '' });
     const openAdRef = useRef(openAd);
     const hasTrackedCurrentModalRef = useRef(false);
     const [pageDetail, setPageDetail] = useState({
@@ -185,6 +189,16 @@ function ImagesList() {
         setReportDialog({ active: true, item });
     }, []);
 
+    const handlePreviewClick = useCallback((item) => {
+        if (item?.thumbUrl) {
+            setPreviewDialog({ open: true, imageUrl: item.thumbUrl, title: item.fileName || 'Preview' });
+        }
+    }, []);
+
+    const handleClosePreview = useCallback(() => {
+        setPreviewDialog({ open: false, imageUrl: '', title: '' });
+    }, []);
+
     return (
         <Box sx={{ p: { xs: 1, md: 2 }, pb: { xs: 14, md: 12 } }}>
             <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2, textAlign: 'center' }}>
@@ -255,7 +269,13 @@ function ImagesList() {
                             justifySelf: 'start',
                         }}
                     >
-                        <ImageCard item={item} onAction={handleImageStats} setOpenAd={setOpenAd} onReport={handleReportClick} />
+                        <ImageCard
+                            item={item}
+                            onAction={handleImageStats}
+                            setOpenAd={setOpenAd}
+                            onReport={handleReportClick}
+                            onPreview={handlePreviewClick}
+                        />
                     </Box>
                 ))}
             </Box>
@@ -299,6 +319,21 @@ function ImagesList() {
                         </Typography>
                     </Box>
                 </Box>
+            <Dialog open={previewDialog.open} onClose={handleClosePreview} maxWidth="md" fullWidth>
+                <DialogTitle>{previewDialog.title}</DialogTitle>
+                <DialogContent sx={{ p: 0, textAlign: 'center' }}>
+                    {previewDialog.imageUrl ? (
+                        <Box
+                            component="img"
+                            src={previewDialog.imageUrl}
+                            alt={previewDialog.title}
+                            sx={{ width: '100%', maxHeight: '75vh', objectFit: 'contain' }}
+                        />
+                    ) : (
+                        <Typography sx={{ p: 3 }}>No preview available.</Typography>
+                    )}
+                </DialogContent>
+            </Dialog>
             <Portal>
             </Portal>
         </Box>

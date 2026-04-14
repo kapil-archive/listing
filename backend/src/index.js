@@ -4,6 +4,7 @@ require('dotenv').config()
 const mongoose = require("mongoose");
 const cors = require("cors");
 const imageRoutes = require("./routes/image.routes");
+const authRoutes = require("./routes/auth.routes");
 const PORT = process.env.PORT || 8081;
 
 app.use(cors());
@@ -13,6 +14,7 @@ app.get("/", (req, res) => {
     res.send("Hello World");
 });
 
+app.use("/api/auth", authRoutes);
 app.use("/api/images", imageRoutes);
 
 

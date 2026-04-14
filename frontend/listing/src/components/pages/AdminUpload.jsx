@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
@@ -18,9 +18,19 @@ import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import { useNavigate } from 'react-router-dom';
 import { DEFAULT_CATEGORY } from './category.constants';
+import { getAuthToken, getAuthUser } from '../common/utils';
 
 function AdminUpload() {
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = getAuthToken();
+        const user = getAuthUser();
+
+        if (!token || !user?.isAdmin) {
+            navigate('/login');
+        }
+    }, [navigate]);
 
     const [category, setCategory] = useState('');
     const [file, setFile] = useState(null);
@@ -55,12 +65,26 @@ function AdminUpload() {
             formData.append('image', file);
             formData.append('categoryName', category);
 
+            const token = getAuthToken();
+            if (!token) {
+                navigate('/login');
+                return;
+            }
+
             const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/images/upload`, {
                 method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
                 body: formData,
             });
 
             const data = await res.json();
+
+            if (res.status === 401 || res.status === 403) {
+                navigate('/login');
+                return;
+            }
 
             if (!res.ok) {
                 throw new Error(data.message || 'Upload failed');

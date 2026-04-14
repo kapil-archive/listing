@@ -21,6 +21,7 @@ import Typography from '@mui/material/Typography';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import { useNavigate } from 'react-router-dom';
+import { getAuthToken, getAuthUser } from '../common/utils';
 
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
@@ -52,11 +53,28 @@ function BlockedImages() {
   const [originalLoadingId, setOriginalLoadingId] = useState('');
 
   useEffect(() => {
+    const token = getAuthToken();
+    const user = getAuthUser();
+
+    if (!token || !user?.isAdmin) {
+      navigate('/login');
+      return;
+    }
+
     const fetchBlockedImages = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${apiUrl}/api/images/blocked?page=${pageDetail.currentPage}&limit=9`);
+        const res = await fetch(`${apiUrl}/api/images/blocked?page=${pageDetail.currentPage}&limit=9`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         const data = await res.json();
+
+        if (res.status === 401 || res.status === 403) {
+          navigate('/login');
+          return;
+        }
 
         if (!res.ok) {
           throw new Error(data.message || 'Failed to fetch blocked images');
@@ -77,7 +95,7 @@ function BlockedImages() {
     };
 
     fetchBlockedImages();
-  }, [pageDetail.currentPage]);
+  }, [pageDetail.currentPage, navigate]);
 
   const handlePageChange = (direction) => {
     setPageDetail((prev) => {
@@ -127,8 +145,23 @@ function BlockedImages() {
       setOriginalLoadingId(item.imageId);
       setError('');
 
-      const res = await fetch(`${apiUrl}/api/images/${item.imageId}/original`);
+      const token = getAuthToken();
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const res = await fetch(`${apiUrl}/api/images/${item.imageId}/original`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await res.json();
+
+      if (res.status === 401 || res.status === 403) {
+        navigate('/login');
+        return;
+      }
 
       if (!res.ok) {
         throw new Error(data.message || 'Failed to fetch original image');
