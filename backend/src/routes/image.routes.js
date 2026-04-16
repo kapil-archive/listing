@@ -7,7 +7,16 @@ const express = require("express");
 
 const router = express.Router();
 
-router.post("/upload", protect, admin, upload.single("image"), uploadImage);
+router.post(
+	"/upload",
+	protect,
+	admin,
+	upload.fields([
+		{ name: "images", maxCount: 10 },
+		{ name: "image", maxCount: 1 },
+	]),
+	uploadImage
+);
 router.post("/report", upload.single("image"), reportImage);
 router.get("/", getAllImages);
 router.get("/blocked", protect, admin, getBlockedImages);

@@ -33,10 +33,16 @@ function AdminUpload() {
     }, [navigate]);
 
     const [category, setCategory] = useState('');
-    const [file, setFile] = useState(null);
-    const [preview, setPreview] = useState(null);
+    const [files, setFiles] = useState([]);
+    const [previews, setPreviews] = useState([]);
     const [loading, setLoading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState({ type: '', message: '' });
+
+    useEffect(() => {
+        return () => {
+            previews.forEach((url) => URL.revokeObjectURL(url));
+        };
+    }, [previews]);
 
     const handleCategoryChange = (event) => {
         setCategory(event.target.value);
@@ -44,17 +50,16 @@ function AdminUpload() {
     };
 
     const handleFileChange = (event) => {
-        const selectedFile = event.target.files[0];
-        if (selectedFile) {
-            setFile(selectedFile);
-            setPreview(URL.createObjectURL(selectedFile));
-            setUploadStatus({ type: '', message: '' });
-        }
+        const selectedFiles = Array.from(event.target.files || []);
+        previews.forEach((url) => URL.revokeObjectURL(url));
+        setFiles(selectedFiles);
+        setPreviews(selectedFiles.map((item) => URL.createObjectURL(item)));
+        setUploadStatus({ type: '', message: '' });
     };
 
     const handleUpload = async () => {
-        if (!file || !category) {
-            setUploadStatus({ type: 'error', message: 'Please select category and image before publishing.' });
+        if (!files.length || !category) {
+            setUploadStatus({ type: 'error', message: 'Please select category and at least one image before publishing.' });
             return;
         }
 
@@ -62,7 +67,9 @@ function AdminUpload() {
             setLoading(true);
 
             const formData = new FormData();
-            formData.append('image', file);
+            files.forEach((file) => {
+                formData.append('images', file);
+            });
             formData.append('categoryName', category);
 
             const token = getAuthToken();
@@ -90,9 +97,10 @@ function AdminUpload() {
                 throw new Error(data.message || 'Upload failed');
             }
 
-            setUploadStatus({ type: 'success', message: 'Image uploaded and published successfully.' });
-            setFile(null);
-            setPreview(null);
+            setUploadStatus({ type: 'success', message: `${files.length} image(s) uploaded and published successfully.` });
+            previews.forEach((url) => URL.revokeObjectURL(url));
+            setFiles([]);
+            setPreviews([]);
             setCategory('');
         } catch (error) {
             setUploadStatus({ type: 'error', message: error.message || 'Upload failed' });
@@ -172,7 +180,7 @@ function AdminUpload() {
                                 <ImageRoundedIcon sx={{ color: '#2563eb' }} />
                                 <Box>
                                     <Typography variant="caption" sx={{ color: '#64748b' }}>Selected Image</Typography>
-                                    <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{file ? 'Ready' : 'Not Selected'}</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{files.length ? `${files.length} Ready` : 'Not Selected'}</Typography>
                                 </Box>
                             </Stack>
                         </Paper>
@@ -236,21 +244,22 @@ function AdminUpload() {
                                 p: 2.4,
                                 borderStyle: 'dashed',
                                 borderWidth: 2,
-                                borderColor: file ? '#059669' : '#334155',
-                                color: file ? '#047857' : '#1e293b',
-                                backgroundColor: file ? '#ecfdf5' : '#f8fafc',
+                                borderColor: files.length ? '#059669' : '#334155',
+                                color: files.length ? '#047857' : '#1e293b',
+                                backgroundColor: files.length ? '#ecfdf5' : '#f8fafc',
                                 fontWeight: 700,
                                 '&:hover': {
-                                    borderColor: file ? '#047857' : '#0f172a',
-                                    backgroundColor: file ? '#dcfce7' : '#f1f5f9',
+                                    borderColor: files.length ? '#047857' : '#0f172a',
+                                    backgroundColor: files.length ? '#dcfce7' : '#f1f5f9',
                                 },
                             }}
                         >
-                            {file ? `Selected: ${file.name}` : 'Choose Image File'}
+                            {files.length ? `Selected: ${files.length} image(s)` : 'Choose Image Files'}
                             <input
                                 type="file"
                                 hidden
                                 accept="image/*"
+                                multiple
                                 onChange={handleFileChange}
                             />
                         </Button>
@@ -289,20 +298,33 @@ function AdminUpload() {
                                 Preview
                             </Typography>
 
-                            {preview ? (
-                                <Box
-                                    component="img"
-                                    src={preview}
-                                    alt="preview"
-                                    sx={{
-                                        width: '100%',
-                                        height: 250,
-                                        objectFit: 'contain',
-                                        borderRadius: 1.5,
-                                        border: '1px solid rgba(15, 23, 42, 0.08)',
-                                        backgroundColor: '#f8fafc',
-                                    }}
-                                />
+                            {previews.length ? (
+                                <Grid container spacing={1}>
+                                    {previews.slice(0, 6).map((url, index) => (
+                                        <Grid item xs={6} key={`${url}-${index}`}>
+                                            <Box
+                                                component="img"
+                                                src={url}
+                                                alt={`preview-${index + 1}`}
+                                                sx={{
+                                                    width: '100%',
+                                                    height: 120,
+                                                    objectFit: 'cover',
+                                                    borderRadius: 1.5,
+                                                    border: '1px solid rgba(15, 23, 42, 0.08)',
+                                                    backgroundColor: '#f8fafc',
+                                                }}
+                                            />
+                                        </Grid>
+                                    ))}
+                                    {previews.length > 6 && (
+                                        <Grid item xs={12}>
+                                            <Typography variant="caption" sx={{ color: '#475569' }}>
+                                                +{previews.length - 6} more selected
+                                            </Typography>
+                                        </Grid>
+                                    )}
+                                </Grid>
                             ) : (
                                 <Box
                                     sx={{
@@ -317,7 +339,7 @@ function AdminUpload() {
                                         px: 2,
                                     }}
                                 >
-                                    Select an image to see preview before publishing.
+                                    Select image files to see preview before publishing.
                                 </Box>
                             )}
                         </Paper>

@@ -9,9 +9,14 @@ const sharp = require("sharp");
 const uploadImage = async (req, res) => {
   try {
     const { categoryId, categoryName } = req.body || {};
+    const files = [
+      ...(req.files?.images || []),
+      ...(req.files?.image || []),
+      ...(req.file ? [req.file] : []),
+    ];
 
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
+    if (!files.length) {
+      return res.status(400).json({ message: "No files uploaded" });
     }
 
     let resolvedCategoryId = categoryId;
@@ -43,28 +48,32 @@ const uploadImage = async (req, res) => {
     }
 
 
-    // Generate thumbnail (e.g., 200x200)
-    const thumbBuffer = await sharp(req.file.buffer)
-      .resize(200, 200, { fit: 'inside' })
-      .toBuffer();
+    const uploadedImages = await Promise.all(
+      files.map(async (file) => {
+        const thumbBuffer = await sharp(file.buffer)
+          .resize(200, 200, { fit: "inside" })
+          .toBuffer();
 
-    const image = await Image.create({
-      categoryId: resolvedCategoryId,
-      image: {
-        data: req.file.buffer,
-        contentType: req.file.mimetype,
-      },
-      thumb: {
-        data: thumbBuffer,
-        contentType: req.file.mimetype,
-      },
-      fileName: req.file.originalname,
-      size: req.file.size,
-    });
+        return Image.create({
+          categoryId: resolvedCategoryId,
+          image: {
+            data: file.buffer,
+            contentType: file.mimetype,
+          },
+          thumb: {
+            data: thumbBuffer,
+            contentType: file.mimetype,
+          },
+          fileName: file.originalname,
+          size: file.size,
+        });
+      })
+    );
 
     res.status(201).json({
       success: true,
-      data: image,
+      count: uploadedImages.length,
+      data: uploadedImages,
     });
   } catch (err) {
     console.error("Image upload failed:", err);
