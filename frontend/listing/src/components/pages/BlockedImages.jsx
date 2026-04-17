@@ -328,11 +328,19 @@ function BlockedImages() {
 
       <Dialog open={messageDialog.open} onClose={handleCloseMessage} fullWidth maxWidth="sm">
         <DialogTitle>Reported Message</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ overflowX: 'hidden' }}>
           <Typography variant="subtitle2" sx={{ mb: 1, color: '#475569' }}>
             Reporter: {messageDialog.reporter}
           </Typography>
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+          <Typography
+            variant="body1"
+            sx={{
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'anywhere',
+              wordBreak: 'break-word',
+              maxWidth: '100%',
+            }}
+          >
             {messageDialog.message}
           </Typography>
         </DialogContent>
