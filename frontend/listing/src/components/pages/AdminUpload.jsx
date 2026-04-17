@@ -13,24 +13,14 @@ import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
-import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import { useNavigate } from 'react-router-dom';
 import { DEFAULT_CATEGORY } from './category.constants';
-import { getAuthToken, getAuthUser } from '../common/utils';
+import { getAuthToken } from '../common/utils';
 
 function AdminUpload() {
     const navigate = useNavigate();
-
-    useEffect(() => {
-        const token = getAuthToken();
-        const user = getAuthUser();
-
-        if (!token || !user?.isAdmin) {
-            navigate('/login');
-        }
-    }, [navigate]);
 
     const [category, setCategory] = useState('');
     const [files, setFiles] = useState([]);
@@ -144,21 +134,14 @@ function AdminUpload() {
                             </Typography>
                         </Box>
 
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2}>
-                            <Button
-                                variant="contained"
-                                startIcon={<ReportProblemRoundedIcon />}
-                                onClick={() => navigate('/admin/blocked-images')}
-                                sx={{
-                                    backgroundColor: '#f59e0b',
-                                    color: '#111827',
-                                    fontWeight: 700,
-                                    '&:hover': { backgroundColor: '#fbbf24' },
-                                }}
-                            >
-                                Review Blocked Images
-                            </Button>
-                        </Stack>
+                        <Chip
+                            label="Upload Workspace"
+                            sx={{
+                                backgroundColor: 'rgba(148, 163, 184, 0.16)',
+                                color: '#e2e8f0',
+                                fontWeight: 700,
+                            }}
+                        />
                     </Stack>
                 </Paper>
 

@@ -19,9 +19,8 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import { useNavigate } from 'react-router-dom';
-import { getAuthToken, getAuthUser } from '../common/utils';
+import { getAuthToken } from '../common/utils';
 
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
@@ -54,9 +53,7 @@ function BlockedImages() {
 
   useEffect(() => {
     const token = getAuthToken();
-    const user = getAuthUser();
-
-    if (!token || !user?.isAdmin) {
+    if (!token) {
       navigate('/login');
       return;
     }
@@ -208,19 +205,7 @@ function BlockedImages() {
               Review all blocked image reports in a centralized admin table.
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<ArrowBackRoundedIcon />}
-            onClick={() => navigate('/admin')}
-            sx={{
-              backgroundColor: '#f8fafc',
-              color: '#0f172a',
-              fontWeight: 700,
-              '&:hover': { backgroundColor: '#e2e8f0' },
-            }}
-          >
-            Back To Admin
-          </Button>
+          <Chip label={`${pageDetail.total} report(s)`} sx={{ backgroundColor: 'rgba(148, 163, 184, 0.16)', color: '#e2e8f0', fontWeight: 700 }} />
         </Stack>
       </Paper>
 

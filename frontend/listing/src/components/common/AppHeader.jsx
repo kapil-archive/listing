@@ -43,7 +43,13 @@ function AppHeader() {
     setOpenMobileMenu(false);
   };
 
-  const isActivePath = (path) => location.pathname === path;
+  const isActivePath = (path) => {
+    if (path === '/admin') {
+      return location.pathname.startsWith('/admin');
+    }
+
+    return location.pathname === path;
+  };
 
   return (
     <>
@@ -128,6 +134,11 @@ function AppHeader() {
                 <ListItemText primary={item.label} />
               </ListItemButton>
             ))}
+            {isLoggedIn && (
+              <ListItemButton selected={isActivePath('/admin')} onClick={() => handleNavigate('/admin')}>
+                <ListItemText primary="Admin Panel" />
+              </ListItemButton>
+            )}
             <ListItemButton onClick={isLoggedIn ? handleLogout : () => handleNavigate('/login')}>
               <ListItemText primary={isLoggedIn ? 'Logout' : 'Admin Login'} />
             </ListItemButton>
