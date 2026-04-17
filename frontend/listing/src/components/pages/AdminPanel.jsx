@@ -1,20 +1,144 @@
 import { useEffect, useState } from 'react';
+import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
 import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import SpaceDashboardRoundedIcon from '@mui/icons-material/SpaceDashboardRounded';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { getAuthToken, getAuthUser, removeAuthToken, removeAuthUser } from '../common/utils';
+import { getAuthToken, getAuthUser, removeAuthToken, removeAuthUser, setAuthToken, setAuthUser } from '../common/utils';
+
+const apiUrl = import.meta.env.VITE_BASE_URL;
+
+function AdminLogin({ onSuccess }) {
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [status, setStatus] = useState({ type: '', message: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (field) => (e) => setFormData((p) => ({ ...p, [field]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus({ type: '', message: '' });
+
+    if (!formData.email || !formData.password) {
+      setStatus({ type: 'error', message: 'Please enter your email and password.' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch(`${apiUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Login failed');
+      if (!data.user?.isAdmin) throw new Error('This account does not have admin access.');
+
+      setAuthToken(data.token);
+      setAuthUser(data.user);
+      onSuccess();
+    } catch (err) {
+      setStatus({ type: 'error', message: err.message || 'Login failed' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f0f2f5',
+      }}
+    >
+      <Paper elevation={3} sx={{ width: '100%', maxWidth: 420, p: { xs: 3, md: 4 }, borderRadius: 3 }}>
+        <Stack spacing={2.5}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2,
+                backgroundColor: '#1e1e2d',
+                display: 'grid',
+                placeItems: 'center',
+              }}
+            >
+              <AdminPanelSettingsRoundedIcon sx={{ color: '#5d5fef', fontSize: 24 }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                Admin Login
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
+                Category Hub — Admin Console
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Divider />
+
+          {status.message && <Alert severity={status.type || 'info'}>{status.message}</Alert>}
+
+          <Box component="form" noValidate onSubmit={handleSubmit}>
+            <Stack spacing={2}>
+              <TextField
+                label="Email"
+                type="email"
+                required
+                fullWidth
+                value={formData.email}
+                onChange={handleChange('email')}
+              />
+              <TextField
+                label="Password"
+                type="password"
+                required
+                fullWidth
+                value={formData.password}
+                onChange={handleChange('password')}
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={loading}
+                sx={{ backgroundColor: '#5d5fef', '&:hover': { backgroundColor: '#4f51d4' } }}
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
+              </Button>
+            </Stack>
+          </Box>
+
+          <Typography variant="caption" sx={{ color: '#94a3b8', textAlign: 'center' }}>
+            Only authorized admin accounts can access this area.
+          </Typography>
+        </Stack>
+      </Paper>
+    </Box>
+  );
+}
 
 const SIDEBAR_WIDTH = 250;
 
@@ -36,15 +160,20 @@ const ADMIN_MENU = [
 function AdminPanel() {
   const location = useLocation();
   const navigate = useNavigate();
-  const currentUser = getAuthUser();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
+  // Always clear auth on mount — admin must log in on every visit
   useEffect(() => {
-    const token = getAuthToken();
-    if (!token || !currentUser?.isAdmin) {
-      navigate('/login', { replace: true });
-    }
-  }, [currentUser?.isAdmin, navigate]);
+    removeAuthToken();
+    removeAuthUser();
+  }, []);
+
+  const isAuthenticated = !!getAuthToken() && !!currentUser?.isAdmin;
+
+  if (!isAuthenticated) {
+    return <AdminLogin onSuccess={() => setCurrentUser(getAuthUser())} />;
+  }
 
   const handleLogout = () => {
     removeAuthToken();

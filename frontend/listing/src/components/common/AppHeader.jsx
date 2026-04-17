@@ -14,7 +14,6 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import { useLocation, useNavigate } from 'react-router-dom';
 import InstallPWA from './InstallPWA';
-import { getAuthToken, getAuthUser, removeAuthToken, removeAuthUser } from './utils';
 
 const NAV_OPTIONS = [
   { label: 'Privacy and policy', path: '/privacy-policy' },
@@ -27,27 +26,12 @@ function AppHeader() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const token = getAuthToken();
-  const currentUser = getAuthUser();
-  const isLoggedIn = !!token && !!currentUser;
-
   const handleNavigate = (path) => {
     navigate(path);
     setOpenMobileMenu(false);
   };
 
-  const handleLogout = () => {
-    removeAuthToken();
-    removeAuthUser();
-    navigate('/login');
-    setOpenMobileMenu(false);
-  };
-
   const isActivePath = (path) => {
-    if (path === '/admin') {
-      return location.pathname.startsWith('/admin');
-    }
-
     return location.pathname === path;
   };
 
@@ -91,22 +75,6 @@ function AppHeader() {
                 {item.label}
               </Button>
             ))}
-            <Button
-              variant={isLoggedIn ? 'contained' : 'outlined'}
-              onClick={() => handleNavigate(isLoggedIn ? '/admin' : '/login')}
-              sx={{ borderRadius: 999, textTransform: 'none' }}
-            >
-              {isLoggedIn ? 'Admin Panel' : 'Admin Login'}
-            </Button>
-            {isLoggedIn && (
-              <Button
-                variant="outlined"
-                onClick={handleLogout}
-                sx={{ borderRadius: 999, textTransform: 'none' }}
-              >
-                Logout
-              </Button>
-            )}
             <InstallPWA />
           </Stack>
 
@@ -134,13 +102,8 @@ function AppHeader() {
                 <ListItemText primary={item.label} />
               </ListItemButton>
             ))}
-            {isLoggedIn && (
-              <ListItemButton selected={isActivePath('/admin')} onClick={() => handleNavigate('/admin')}>
-                <ListItemText primary="Admin Panel" />
-              </ListItemButton>
-            )}
-            <ListItemButton onClick={isLoggedIn ? handleLogout : () => handleNavigate('/login')}>
-              <ListItemText primary={isLoggedIn ? 'Logout' : 'Admin Login'} />
+            <ListItemButton onClick={() => handleNavigate('/login')}>
+              <ListItemText primary="Login" />
             </ListItemButton>
           </List>
         </Box>
