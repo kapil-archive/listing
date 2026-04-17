@@ -15,6 +15,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
 import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import SpaceDashboardRoundedIcon from '@mui/icons-material/SpaceDashboardRounded';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
@@ -154,6 +155,12 @@ const ADMIN_MENU = [
     path: '/admin/blocked-images',
     match: '/admin/blocked-images',
     icon: ReportProblemRoundedIcon,
+  },
+  {
+    label: 'General Queries',
+    path: '/admin/general-queries',
+    match: '/admin/general-queries',
+    icon: QuestionAnswerIcon,
   },
 ];
 
