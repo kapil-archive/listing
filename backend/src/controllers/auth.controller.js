@@ -148,9 +148,37 @@ const resetPassword = async (req, res) => {
     }
 };
 
+const changePassword = async (req, res) => {
+    try {
+        const { newPassword } = req.body || {};
+        if (!newPassword) {
+            return errorHandler({ statusCode: 400, message: "New password is required" }, req, res);
+        }
+
+        if (newPassword.length < 6) {
+            return errorHandler({ statusCode: 400, message: "Password must be at least 6 characters long" }, req, res);
+        }
+
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+        if (!user) {
+            return errorHandler({ statusCode: 404, message: "User not found" }, req, res);
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+
+        res.status(200).json({ message: "Password changed successfully" });
+    } catch (error) {
+        console.error("Error in changePassword controller", error);
+        errorHandler(error, req, res);
+    }
+};
+
 module.exports = {
     register,
     login,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    changePassword
 };
