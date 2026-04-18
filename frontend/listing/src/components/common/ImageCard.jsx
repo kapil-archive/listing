@@ -46,9 +46,9 @@ const ImageCard = React.memo(({ item, onAction, setOpenAd, onReport, onPreview }
                     <Chip label={item.category} size="small" sx={{ backgroundColor: '#ecfeff', color: '#155e75' }} />
                 </Stack>
             </CardContent>
-            <CardActions sx={{ px: 2, pt: 0, pb: 1 ,mt: 2}}>
-                <Box sx={{ width: '100%', display: 'flex', alignItems: 'center',gap : 2}}>
-                    <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 0.25 }}>
+            <CardActions sx={{ px: 2, pt: 0, pb: 1, mt: 2, minHeight: 50 }}>
+                <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 0.5 }}>
                         <IconButton
                             aria-label="add to favorites"
                             size="small"
@@ -57,12 +57,12 @@ const ImageCard = React.memo(({ item, onAction, setOpenAd, onReport, onPreview }
                         >
                             <FavoriteIcon fontSize="small" />
                         </IconButton>
-                        <Typography variant="caption">
+                        <Typography variant="caption" sx={{ whiteSpace: 'nowrap' }}>
                             {item.favouriteCount || 0} Likes
                         </Typography>
                     </Box>
 
-                    <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 0.25 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 0.5 }}>
                         <IconButton
                             aria-label="download"
                             size="small"
@@ -74,7 +74,7 @@ const ImageCard = React.memo(({ item, onAction, setOpenAd, onReport, onPreview }
                         {/* <IconButton aria-label="download" onClick={() => onAction(item._id, "isDownload")}>
                             <FileDownloadIcon />
                         </IconButton> */}
-                        <Typography variant="caption">
+                        <Typography variant="caption" sx={{ whiteSpace: 'nowrap' }}>
                             {item.downloadCount || 0} Download
                         </Typography>
                     </Box>

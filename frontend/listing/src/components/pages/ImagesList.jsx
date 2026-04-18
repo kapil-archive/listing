@@ -302,8 +302,14 @@ function ImagesList() {
                     mt: 1,
                     display: 'grid',
                     gap: { xs: 1.5, sm: 2 },
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
-                    justifyItems: 'start',
+                    gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: 'repeat(2, 1fr)',
+                        md: 'repeat(3, 1fr)',
+                        lg: 'repeat(4, 1fr)',
+                        xl: 'repeat(5, 1fr)',
+                    },
+                    justifyItems: 'center',
                 }}
             >
                 {visibleImages.map((item) => (
@@ -311,8 +317,7 @@ function ImagesList() {
                         key={item._id}
                         sx={{
                             width: '100%',
-                            maxWidth: visibleImages.length === 1 ? 360 : '100%',
-                            justifySelf: 'start',
+                            maxWidth: 360,
                         }}
                     >
                         <ImageCard
