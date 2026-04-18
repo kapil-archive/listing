@@ -8,6 +8,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Menu from '@mui/material/Menu';
@@ -17,8 +18,11 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
 import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import SpaceDashboardRoundedIcon from '@mui/icons-material/SpaceDashboardRounded';
@@ -165,7 +169,10 @@ const ADMIN_MENU = [
 function AdminPanel() {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [currentUser] = useState(() => getAuthUser());
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [resetFormData, setResetFormData] = useState({ newPassword: '', confirmPassword: '' });
@@ -188,9 +195,17 @@ function AdminPanel() {
   }
 
   const handleLogout = () => {
+    setMobileNavOpen(false);
     removeAuthToken();
     removeAuthUser();
     navigate('/login');
+  };
+
+  const handleNavigate = (path) => {
+    navigate(path);
+    if (isMobile) {
+      setMobileNavOpen(false);
+    }
   };
 
   const handleResetPasswordOpen = () => {
@@ -252,6 +267,95 @@ function AdminPanel() {
   const displayName = currentUser?.name || currentUser?.email || 'Admin';
   const initials = displayName.slice(0, 2).toUpperCase();
 
+  const sidebarContent = (
+    <>
+      {/* Brand */}
+      <Box
+        sx={{
+          px: 2,
+          py: 2.5,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center">
+          <SpaceDashboardRoundedIcon sx={{ color: '#5d5fef', fontSize: 22 }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#fff', lineHeight: 1.2, fontSize: 13 }}>
+            Category Hub
+          </Typography>
+        </Stack>
+      </Box>
+
+      {/* Nav items */}
+      <Box sx={{ flex: 1, pt: 1 }}>
+        {ADMIN_MENU.map((item) => {
+          const isActive = item.match === '/admin'
+            ? location.pathname === '/admin'
+            : location.pathname.startsWith(item.match);
+          const Icon = item.icon;
+
+          return (
+            <Box
+              key={item.path}
+              component="button"
+              type="button"
+              onClick={() => handleNavigate(item.path)}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.25,
+                width: '100%',
+                px: 2,
+                py: 1.25,
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                backgroundColor: isActive ? 'rgba(93, 95, 239, 0.18)' : 'transparent',
+                borderLeft: isActive ? '3px solid #5d5fef' : '3px solid transparent',
+                color: isActive ? '#fff' : '#a2a3b7',
+                transition: 'background-color 0.15s ease, color 0.15s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  color: '#fff',
+                },
+              }}
+            >
+              <Icon sx={{ fontSize: 18, flexShrink: 0 }} />
+              <Typography variant="body2" sx={{ fontWeight: isActive ? 700 : 500, fontSize: 12.5, lineHeight: 1 }}>
+                {item.label}
+              </Typography>
+            </Box>
+          );
+        })}
+      </Box>
+
+      {/* Logout at bottom */}
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+      <Box
+        component="button"
+        type="button"
+        onClick={handleLogout}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.25,
+          width: '100%',
+          px: 2,
+          py: 1.5,
+          border: 'none',
+          cursor: 'pointer',
+          backgroundColor: 'transparent',
+          color: '#a2a3b7',
+          '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)', color: '#fff' },
+        }}
+      >
+        <LogoutRoundedIcon sx={{ fontSize: 18 }} />
+        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12.5 }}>
+          Logout
+        </Typography>
+      </Box>
+    </>
+  );
+
   return (
     <>
       <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#f0f2f5' }}>
@@ -262,7 +366,7 @@ function AdminPanel() {
           sx={{
             width: SIDEBAR_WIDTH,
             flexShrink: 0,
-            display: 'flex',
+            display: { xs: 'none', md: 'flex' },
             flexDirection: 'column',
             backgroundColor: '#1e1e2d',
             color: '#a2a3b7',
@@ -270,91 +374,27 @@ function AdminPanel() {
             overflowY: 'auto',
           }}
         >
-          {/* Brand */}
-          <Box
-            sx={{
-              px: 2,
-              py: 2.5,
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-            }}
-          >
-            <Stack direction="row" spacing={1} alignItems="center">
-              <SpaceDashboardRoundedIcon sx={{ color: '#5d5fef', fontSize: 22 }} />
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#fff', lineHeight: 1.2, fontSize: 13 }}>
-                Category Hub
-              </Typography>
-            </Stack>
-          </Box>
-
-          {/* Nav items */}
-          <Box sx={{ flex: 1, pt: 1 }}>
-            {ADMIN_MENU.map((item) => {
-              const isActive = item.match === '/admin'
-                ? location.pathname === '/admin'
-                : location.pathname.startsWith(item.match);
-              const Icon = item.icon;
-
-              return (
-                <Box
-                  key={item.path}
-                  component="button"
-                  type="button"
-                  onClick={() => navigate(item.path)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.25,
-                    width: '100%',
-                    px: 2,
-                    py: 1.25,
-                    border: 'none',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    backgroundColor: isActive ? 'rgba(93, 95, 239, 0.18)' : 'transparent',
-                    borderLeft: isActive ? '3px solid #5d5fef' : '3px solid transparent',
-                    color: isActive ? '#fff' : '#a2a3b7',
-                    transition: 'background-color 0.15s ease, color 0.15s ease',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255,255,255,0.06)',
-                      color: '#fff',
-                    },
-                  }}
-                >
-                  <Icon sx={{ fontSize: 18, flexShrink: 0 }} />
-                  <Typography variant="body2" sx={{ fontWeight: isActive ? 700 : 500, fontSize: 12.5, lineHeight: 1 }}>
-                    {item.label}
-                  </Typography>
-                </Box>
-              );
-            })}
-          </Box>
-
-          {/* Logout at bottom */}
-          <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
-          <Box
-            component="button"
-            type="button"
-            onClick={handleLogout}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.25,
-              width: '100%',
-              px: 2,
-              py: 1.5,
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: 'transparent',
-              color: '#a2a3b7',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)', color: '#fff' },
-            }}
-          >
-            <LogoutRoundedIcon sx={{ fontSize: 18 }} />
-            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12.5 }}>
-              Logout
-            </Typography>
-          </Box>
+          {sidebarContent}
         </Box>
+
+        <Drawer
+          open={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
+          variant="temporary"
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': {
+              width: SIDEBAR_WIDTH,
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: '#1e1e2d',
+              color: '#a2a3b7',
+              borderRight: 'none',
+            },
+          }}
+        >
+          {sidebarContent}
+        </Drawer>
 
         {/* ── Right side ── */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -366,13 +406,29 @@ function AdminPanel() {
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-end',
-              px: 3,
+              justifyContent: 'space-between',
+              px: { xs: 1.5, sm: 2.5, md: 3 },
               backgroundColor: '#ffffff',
               borderBottom: '1px solid rgba(15,23,42,0.08)',
               boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
             }}
           >
+            <Stack direction="row" spacing={1} alignItems="center">
+              <IconButton
+                aria-label="open navigation"
+                onClick={() => setMobileNavOpen(true)}
+                sx={{ display: { xs: 'inline-flex', md: 'none' } }}
+              >
+                <MenuRoundedIcon sx={{ color: '#334155' }} />
+              </IconButton>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: 'none', sm: 'flex' } }}>
+                <SpaceDashboardRoundedIcon sx={{ color: '#5d5fef', fontSize: 18 }} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', letterSpacing: 0.2 }}>
+                  Admin Console
+                </Typography>
+              </Stack>
+            </Stack>
+
             <Tooltip title="Account options">
               <Stack
                 direction="row"
@@ -384,7 +440,19 @@ function AdminPanel() {
                 <Avatar sx={{ width: 32, height: 32, backgroundColor: '#5d5fef', fontSize: 13, fontWeight: 700 }}>
                   {initials}
                 </Avatar>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#0f172a', fontSize: 13 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    display: { xs: 'none', sm: 'block' },
+                    fontWeight: 600,
+                    color: '#0f172a',
+                    fontSize: 13,
+                    maxWidth: { sm: 170, md: 260 },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {displayName}
                 </Typography>
                 <IconButton size="small" sx={{ p: 0 }}>
@@ -419,7 +487,7 @@ function AdminPanel() {
             sx={{
               flex: 1,
               overflowY: 'auto',
-              p: 3,
+              p: { xs: 1.5, sm: 2, md: 3 },
               backgroundColor: '#f0f2f5',
             }}
           >
