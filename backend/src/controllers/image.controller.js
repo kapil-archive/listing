@@ -86,24 +86,42 @@ const getAllImages = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const searchQuery = req.query.search || '';
 
     // Use aggregation pipeline for better performance: count + fetch in single query
     const [result] = await Image.aggregate([
       { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "categoryData",
+        },
+      },
+      {
+        $addFields: {
+          categoryName: { $arrayElemAt: ["$categoryData.name", 0] },
+        },
+      },
+      ...(searchQuery
+        ? [
+            {
+              $match: {
+                $or: [
+                  { fileName: { $regex: searchQuery, $options: 'i' } },
+                  { categoryName: { $regex: searchQuery, $options: 'i' } },
+                ],
+              },
+            },
+          ]
+        : []),
       {
         $facet: {
           metadata: [{ $count: "total" }],
           data: [
             { $skip: skip },
             { $limit: limit },
-            {
-              $lookup: {
-                from: "categories",
-                localField: "categoryId",
-                foreignField: "_id",
-                as: "categoryData",
-              },
-            },
             {
               $project: {
                 _id: 1,
@@ -114,7 +132,7 @@ const getAllImages = async (req, res) => {
                 favouriteCount: { $ifNull: ["$favouriteCount", 0] },
                 downloadCount: { $ifNull: ["$downloadCount", 0] },
                 category: {
-                  $ifNull: [{ $arrayElemAt: ["$categoryData.name", 0] }, "Unknown"],
+                  $ifNull: ["$categoryName", "Unknown"],
                 },
                 contentType: "$image.contentType",
                 thumbData: "$thumb.data",

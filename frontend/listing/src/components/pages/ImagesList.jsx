@@ -6,6 +6,9 @@ import Portal from '@mui/material/Portal';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import SearchIcon from '@mui/icons-material/Search';
 import { DEFAULT_CATEGORY } from './category.constants';
 import ImageCard from '../common/ImageCard';
 import AdDialog from '../common/AdDialog';
@@ -18,6 +21,7 @@ const PAGE_WINDOW_SIZE = 10;
 function ImagesList() {
     const [allImages, setAllImages] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [openAd, setOpenAd] = useState({ imageId: null, active: false });
@@ -46,7 +50,13 @@ function ImagesList() {
         const fetchImages = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`${apiUrl}/api/images?page=${pageDetail.currentPage}&limit=10`);
+                const params = new URLSearchParams();
+                params.set('page', pageDetail.currentPage);
+                params.set('limit', 10);
+                if (searchQuery.trim()) {
+                    params.set('search', searchQuery.trim());
+                }
+                const res = await fetch(`${apiUrl}/api/images?${params}`);
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -65,7 +75,7 @@ function ImagesList() {
         };
 
         fetchImages();
-    }, [pageDetail.currentPage]);
+    }, [pageDetail.currentPage, searchQuery]);
 
     const handlePageWindowClick = useCallback((windowDirection) => {
         setPageDetail((prev) => {
@@ -183,6 +193,12 @@ function ImagesList() {
 
     const handleClick = useCallback((categoryName) => {
         setSelectedCategory(categoryName);
+        setPageDetail({ currentPage: 1, totalPages: 1 });
+    }, []);
+
+    const handleSearchChange = useCallback((e) => {
+        setSearchQuery(e.target.value);
+        setPageDetail({ currentPage: 1, totalPages: 1 });
     }, []);
 
     const handleReportClick = useCallback((item) => {
@@ -212,6 +228,36 @@ function ImagesList() {
                 setReportDialog={setReportDialog}
                 onSuccess={() => setError('')}
             />
+
+            {/* Search Bar */}
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+                <TextField
+                    placeholder="Search by image name or category..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon sx={{ color: '#0369a1', mr: 1 }} />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{
+                        width: '100%',
+                        maxWidth: 600,
+                        '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            backgroundColor: '#f0f9ff',
+                            '&:hover fieldset': {
+                                borderColor: '#0369a1',
+                            },
+                            '&.Mui-focused fieldset': {
+                                borderColor: '#0369a1',
+                            },
+                        },
+                    }}
+                />
+            </Box>
 
             <div>
                 <Chip
