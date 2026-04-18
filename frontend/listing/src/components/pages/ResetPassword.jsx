@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
@@ -8,60 +8,61 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Link from '@mui/material/Link';
-import { getAuthToken, getAuthUser, setAuthToken, setAuthUser } from '../common/utils';
 
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
-function Login() {
+function ResetPassword() {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState('');
 
   useEffect(() => {
-    const token = getAuthToken();
-    const user = getAuthUser();
-
-    if (token && user) {
-      navigate(user.isAdmin ? '/admin' : '/images', { replace: true });
+    const queryToken = searchParams.get('token');
+    if (!queryToken) {
+      setStatus({ type: 'error', message: 'Reset token is missing. Use the link from your reset email.' });
+      return;
     }
-  }, [navigate]);
-
-  const handleInputChange = (field) => (event) => {
-    setFormData((prev) => ({ ...prev, [field]: event.target.value }));
-  };
+    setToken(queryToken);
+  }, [searchParams]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setStatus({ type: '', message: '' });
 
-    if (!formData.email || !formData.password) {
-      setStatus({ type: 'error', message: 'Please complete all required fields.' });
+    if (!token) {
+      setStatus({ type: 'error', message: 'Reset token is not available.' });
+      return;
+    }
+    if (!password || !confirmPassword) {
+      setStatus({ type: 'error', message: 'Please enter and confirm your new password.' });
+      return;
+    }
+    if (password !== confirmPassword) {
+      setStatus({ type: 'error', message: 'Passwords do not match.' });
       return;
     }
 
     try {
       setLoading(true);
-      const res = await fetch(`${apiUrl}/api/auth/login`, {
+      const res = await fetch(`${apiUrl}/api/auth/password/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: JSON.stringify({ token, password }),
       });
-
       const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(data.message || 'Request failed');
+        throw new Error(data.message || 'Unable to reset password.');
       }
 
-      setAuthToken(data.token);
-      setAuthUser(data.user);
-
-      navigate(data.user?.isAdmin ? '/admin' : '/images', { replace: true });
+      setStatus({ type: 'success', message: data.message });
+      setTimeout(() => navigate('/login', { replace: true }), 1800);
     } catch (error) {
-      setStatus({ type: 'error', message: error.message || 'Unable to complete request' });
+      setStatus({ type: 'error', message: error.message || 'Unable to complete request.' });
     } finally {
       setLoading(false);
     }
@@ -72,10 +73,10 @@ function Login() {
       <Paper elevation={3} sx={{ width: '100%', maxWidth: 480, p: { xs: 3, md: 4 }, borderRadius: 3 }}>
         <Stack spacing={2}>
           <Typography variant="h4" sx={{ fontWeight: 800 }}>
-            Admin Login
+            Set New Password
           </Typography>
           <Typography variant="body2" sx={{ color: '#475569' }}>
-            Sign in with your admin credentials to access the admin console.
+            Enter a new password for your admin account.
           </Typography>
 
           {status.message && <Alert severity={status.type || 'info'}>{status.message}</Alert>}
@@ -83,32 +84,32 @@ function Login() {
           <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
             <Stack spacing={2}>
               <TextField
-                label="Email"
-                type="email"
+                label="New Password"
+                type="password"
                 required
-                value={formData.email}
-                onChange={handleInputChange('email')}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 fullWidth
               />
               <TextField
-                label="Password"
+                label="Confirm Password"
                 type="password"
                 required
-                value={formData.password}
-                onChange={handleInputChange('password')}
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
                 fullWidth
               />
-              <Link component={RouterLink} to="/forgot-password" variant="body2" sx={{ alignSelf: 'flex-end', mt: -1, mb: 1, cursor: 'pointer' }}>
-                Forgot password?
-              </Link>
-              <Button type="submit" variant="contained" disabled={loading} size="large">
-                {loading ? 'Please wait...' : 'Login'}
+              <Button type="submit" variant="contained" disabled={loading || !token} size="large">
+                {loading ? 'Resetting...' : 'Reset Password'}
               </Button>
             </Stack>
           </Box>
 
           <Typography variant="body2" sx={{ color: '#475569' }}>
-            Only authorized admin accounts can access this route.
+            Back to{' '}
+            <Link component={RouterLink} to="/login" sx={{ cursor: 'pointer' }}>
+              Sign in
+            </Link>
           </Typography>
         </Stack>
       </Paper>
@@ -116,4 +117,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default ResetPassword;

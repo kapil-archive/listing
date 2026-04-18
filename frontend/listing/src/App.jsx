@@ -8,6 +8,8 @@ import ImagesList from './components/pages/ImagesList';
 import FillForm from './components/pages/FillForm';
 import BlockedImages from './components/pages/BlockedImages';
 import Login from './components/pages/Login';
+import ForgotPassword from './components/pages/ForgotPassword';
+import ResetPassword from './components/pages/ResetPassword';
 import PrivacyPolicy from './components/pages/PrivacyPolicy';
 import TermsAndConditions from './components/pages/TermsAndConditions';
 import AppHeader from './components/common/AppHeader';
@@ -34,6 +36,8 @@ function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Navigate to="/images" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/images" element={<ImagesList />} />
           <Route path="/fill-form" element={<FillForm />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />

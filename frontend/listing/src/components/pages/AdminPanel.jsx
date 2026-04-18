@@ -168,18 +168,21 @@ function AdminPanel() {
   const location = useLocation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser] = useState(() => getAuthUser());
 
-  // Always clear auth on mount — admin must log in on every visit
   useEffect(() => {
-    removeAuthToken();
-    removeAuthUser();
-  }, []);
+    const token = getAuthToken();
+    const storedUser = getAuthUser();
+
+    if (!token || !storedUser?.isAdmin) {
+      navigate('/login', { replace: true });
+    }
+  }, [navigate]);
 
   const isAuthenticated = !!getAuthToken() && !!currentUser?.isAdmin;
 
   if (!isAuthenticated) {
-    return <AdminLogin onSuccess={() => setCurrentUser(getAuthUser())} />;
+    return null;
   }
 
   const handleLogout = () => {
