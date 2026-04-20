@@ -1,10 +1,9 @@
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 const QUICK_LINKS = [
   { label: 'Images', path: '/images' },
@@ -18,7 +17,6 @@ const LEGAL_LINKS = [
 ];
 
 function AppFooter() {
-  const navigate = useNavigate();
   const year = new Date().getFullYear();
 
   return (
@@ -51,15 +49,15 @@ function AppFooter() {
             </Typography>
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
               {QUICK_LINKS.map((item, index) => (
-                <Button
+                <Link
                   key={`${item.label}-${index}`}
-                  size="small"
-                  color="inherit"
-                  onClick={() => navigate(item.path)}
-                  sx={{ textTransform: 'none', color: '#0f172a', px: 1 }}
+                  component={RouterLink}
+                  to={item.path}
+               
+                  sx={{ color: '#0f172a', fontSize: '0.875rem', fontWeight: 500, px: 1 }}
                 >
                   {item.label}
-                </Button>
+                </Link>
               ))}
             </Stack>
           </Box>
@@ -74,8 +72,8 @@ function AppFooter() {
                   key={`${item.label}-${index}`}
                   component={RouterLink}
                   to={item.path}
-                  underline="hover"
-                  sx={{ color: '#0f172a', fontSize: '0.875rem', fontWeight: 500 }}
+                  
+                  sx={{ color: '#0f172a', fontSize: '0.875rem', fontWeight: 500, }}
                 >
                   {item.label}
                 </Link>
@@ -84,7 +82,7 @@ function AppFooter() {
 
             <Typography variant="body2" sx={{ color: '#475569', mt: 0.75 }}>
               Email:{' '}
-              <Link href="mailto:support@categoryhub.app" underline="hover" sx={{ color: '#0f172a' }}>
+              <Link href="mailto:support@categoryhub.app" sx={{ color: '#0f172a' }}>
                 support@categoryhub.app
               </Link>
             </Typography>
