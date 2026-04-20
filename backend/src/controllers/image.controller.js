@@ -81,12 +81,43 @@ const uploadImage = async (req, res) => {
   }
 };
 
+// Escapes special regex characters to prevent ReDoS
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const getAllImages = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const searchQuery = req.query.search || '';
+    const categoryFilter = req.query.category || '';
+
+    // Build the $match filter based on category and/or search
+    const buildMatchStage = () => {
+      if (!searchQuery && !categoryFilter) return null;
+
+      const filter = {};
+
+      if (categoryFilter) {
+        filter.categoryName = { $regex: `^${escapeRegex(categoryFilter)}$`, $options: 'i' };
+      }
+
+      if (searchQuery) {
+        if (categoryFilter) {
+          // Category already fixed — search only within file names
+          filter.fileName = { $regex: escapeRegex(searchQuery), $options: 'i' };
+        } else {
+          filter.$or = [
+            { fileName: { $regex: escapeRegex(searchQuery), $options: 'i' } },
+            { categoryName: { $regex: escapeRegex(searchQuery), $options: 'i' } },
+          ];
+        }
+      }
+
+      return { $match: filter };
+    };
+
+    const matchStage = buildMatchStage();
 
     // Use aggregation pipeline for better performance: count + fetch in single query
     const [result] = await Image.aggregate([
@@ -104,18 +135,7 @@ const getAllImages = async (req, res) => {
           categoryName: { $arrayElemAt: ["$categoryData.name", 0] },
         },
       },
-      ...(searchQuery
-        ? [
-            {
-              $match: {
-                $or: [
-                  { fileName: { $regex: searchQuery, $options: 'i' } },
-                  { categoryName: { $regex: searchQuery, $options: 'i' } },
-                ],
-              },
-            },
-          ]
-        : []),
+      ...(matchStage ? [matchStage] : []),
       {
         $facet: {
           metadata: [{ $count: "total" }],

@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Portal from '@mui/material/Portal';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 import { DEFAULT_CATEGORY } from './category.constants';
 import ImageCard from '../common/ImageCard';
@@ -20,7 +20,8 @@ const PAGE_WINDOW_SIZE = 10;
 
 function ImagesList() {
     const [allImages, setAllImages] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [searchInput, setSearchInput] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -56,6 +57,9 @@ function ImagesList() {
                 if (searchQuery.trim()) {
                     params.set('search', searchQuery.trim());
                 }
+                if (selectedCategory) {
+                    params.set('category', selectedCategory);
+                }
                 const res = await fetch(`${apiUrl}/api/images?${params}`);
                 const data = await res.json();
 
@@ -75,7 +79,7 @@ function ImagesList() {
         };
 
         fetchImages();
-    }, [pageDetail.currentPage, searchQuery]);
+    }, [pageDetail.currentPage, searchQuery, selectedCategory]);
 
     const handlePageWindowClick = useCallback((windowDirection) => {
         setPageDetail((prev) => {
@@ -181,25 +185,28 @@ function ImagesList() {
         };
     }, []);
 
-    const visibleImages = useMemo(() => {
-        if (selectedCategory === 'All') {
-            return allImages;
-        }
+    const visibleImages = useMemo(() => allImages, [allImages]);
 
-        return allImages.filter((image) =>
-            image.category?.toLowerCase() === selectedCategory.toLowerCase()
-        );
-    }, [allImages, selectedCategory]);
-
-    const handleClick = useCallback((categoryName) => {
-        setSelectedCategory(categoryName);
+    const handleCategoryChange = useCallback((e) => {
+        setSelectedCategory(e.target.value);
         setPageDetail({ currentPage: 1, totalPages: 1 });
     }, []);
 
     const handleSearchChange = useCallback((e) => {
-        setSearchQuery(e.target.value);
-        setPageDetail({ currentPage: 1, totalPages: 1 });
+        setSearchInput(e.target.value);
     }, []);
+
+    const handleSearchSubmit = useCallback(() => {
+        setSearchQuery(searchInput.trim());
+        setPageDetail({ currentPage: 1, totalPages: 1 });
+    }, [searchInput]);
+
+    const handleSearchKeyDown = useCallback((e) => {
+        if (e.key === 'Enter') {
+            setSearchQuery(searchInput.trim());
+            setPageDetail({ currentPage: 1, totalPages: 1 });
+        }
+    }, [searchInput]);
 
     const handleReportClick = useCallback((item) => {
         setReportDialog({ active: true, item });
@@ -229,66 +236,72 @@ function ImagesList() {
                 onSuccess={() => setError('')}
             />
 
-            {/* Search Bar */}
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+            {/* Search Bar + Category Filter */}
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center', gap: 1.5, flexWrap: 'wrap' }}>
                 <TextField
-                    placeholder="Search by image name or category..."
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon sx={{ color: '#0369a1', mr: 1 }} />
-                            </InputAdornment>
-                        ),
-                    }}
+                    select
+                    label="Category"
+                    value={selectedCategory}
+                    onChange={handleCategoryChange}
                     sx={{
-                        width: '100%',
-                        maxWidth: 600,
+                        minWidth: 160,
                         '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
                             backgroundColor: '#f0f9ff',
-                            '&:hover fieldset': {
-                                borderColor: '#0369a1',
-                            },
-                            '&.Mui-focused fieldset': {
-                                borderColor: '#0369a1',
-                            },
+                            '&:hover fieldset': { borderColor: '#0369a1' },
+                            '&.Mui-focused fieldset': { borderColor: '#0369a1' },
                         },
                     }}
-                />
-            </Box>
+                >
+                    <MenuItem value="">All</MenuItem>
+                    {DEFAULT_CATEGORY.map((cat) => (
+                        <MenuItem key={cat.id} value={cat.name}>{cat.name}</MenuItem>
+                    ))}
+                </TextField>
 
-            <div>
-                <Chip
-                    key="all"
-                    label="All"
-                    size="medium"
+                <Box
                     sx={{
-                        mr: 1,
-                        mb: 1,
-                        backgroundColor: selectedCategory === 'All' ? '#0369a1' : '#f0f9ff',
-                        color: selectedCategory === 'All' ? '#ffffff' : '#0369a1',
+                        flex: 1,
+                        maxWidth: 500,
+                        minWidth: 200,
+                        display: 'flex',
+                        alignItems: 'center',
+                        borderRadius: 2,
+                        border: '1px solid rgba(0,0,0,0.23)',
+                        backgroundColor: '#f0f9ff',
+                        overflow: 'hidden',
+                        '&:hover': { borderColor: '#0369a1' },
+                        '&:focus-within': { borderColor: '#0369a1', borderWidth: '2px' },
                     }}
-                    onClick={() => handleClick('All')}
-                />
-                {
-                    DEFAULT_CATEGORY.map((cat) => (
-                        <Chip
-                            key={cat.id}
-                            label={cat.name}
-                            size="medium"
-                            sx={{
-                                mr: 1,
-                                mb: 1,
-                                backgroundColor: selectedCategory === cat.name ? '#0369a1' : '#f0f9ff',
-                                color: selectedCategory === cat.name ? '#ffffff' : '#0369a1',
-                            }}
-                            onClick={() => handleClick(cat.name)}
-                        />
-                    ))
-                }
-            </div>
+                >
+                    <TextField
+                        placeholder="Search by image name..."
+                        value={searchInput}
+                        onChange={handleSearchChange}
+                        onKeyDown={handleSearchKeyDown}
+                        variant="standard"
+                        InputProps={{ disableUnderline: true }}
+                        sx={{
+                            flex: 1,
+                            px: 1.5,
+                            '& .MuiInputBase-root': { backgroundColor: 'transparent' },
+                        }}
+                    />
+                    <IconButton
+                        onClick={handleSearchSubmit}
+                        sx={{
+                            borderRadius: 0,
+                            px: 1.5,
+                            height: '100%',
+                            color: '#ffffff',
+                            backgroundColor: '#0369a1',
+                            '&:hover': { backgroundColor: '#0284c7' },
+                        }}
+                    >
+                        <SearchIcon />
+                    </IconButton>
+                </Box>
+            </Box>
 
             {loading && <Typography>Loading images...</Typography>}
             {error && <Typography color="error">{error}</Typography>}
