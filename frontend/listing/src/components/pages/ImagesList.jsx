@@ -20,7 +20,7 @@ const PAGE_WINDOW_SIZE = 10;
 
 function ImagesList() {
     const [allImages, setAllImages] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const [searchInput, setSearchInput] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
@@ -57,7 +57,7 @@ function ImagesList() {
                 if (searchQuery.trim()) {
                     params.set('search', searchQuery.trim());
                 }
-                if (selectedCategory) {
+                if (selectedCategory && selectedCategory !== 'All') {
                     params.set('category', selectedCategory);
                 }
                 const res = await fetch(`${apiUrl}/api/images?${params}`);
@@ -253,7 +253,8 @@ function ImagesList() {
                         },
                     }}
                 >
-                    <MenuItem value="">All</MenuItem>
+                    {/* <MenuItem value="">All</MenuItem> */}
+                    
                     {DEFAULT_CATEGORY.map((cat) => (
                         <MenuItem key={cat.id} value={cat.name}>{cat.name}</MenuItem>
                     ))}

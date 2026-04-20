@@ -1,4 +1,5 @@
 export const DEFAULT_CATEGORY = [
+  { id: 0, name: 'All' },
   { id: 1, name: 'Electronics' },
   { id: 2, name: 'Fashion' },
   { id: 3, name: 'Home' },
