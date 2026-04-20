@@ -337,8 +337,22 @@ const getBlockedImages = async (req, res) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 9;
     const skip = (page - 1) * limit;
+    const search = (req.query.search || "").trim();
 
-    const [result] = await Report.aggregate([
+    const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matchStage = search
+      ? {
+        $match: {
+          $or: [
+            { name: { $regex: escapeRegex(search), $options: "i" } },
+            { email: { $regex: escapeRegex(search), $options: "i" } },
+          ],
+        },
+      }
+      : null;
+
+    const aggregationPipeline = [
+      ...(matchStage ? [matchStage] : []),
       { $sort: { createdAt: -1 } },
       {
         $facet: {
@@ -375,7 +389,9 @@ const getBlockedImages = async (req, res) => {
           ],
         },
       },
-    ]);
+    ];
+
+    const [result] = await Report.aggregate(aggregationPipeline);
 
     const total = result?.metadata?.[0]?.total || 0;
     const blockedImages = result?.data || [];

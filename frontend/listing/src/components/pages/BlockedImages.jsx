@@ -17,7 +17,10 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import { useNavigate } from 'react-router-dom';
 import { getAuthToken } from '../common/utils';
@@ -34,6 +37,8 @@ function BlockedImages() {
     totalPages: 1,
     total: 0,
   });
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [previewDialog, setPreviewDialog] = useState({
     open: false,
     imageUrl: '',
@@ -52,6 +57,16 @@ function BlockedImages() {
   const [originalLoadingId, setOriginalLoadingId] = useState('');
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const normalizedQuery = searchInput.trim();
+      setSearchQuery(normalizedQuery);
+      setPageDetail((prev) => (prev.currentPage === 1 ? prev : { ...prev, currentPage: 1 }));
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
+
+  useEffect(() => {
     const token = getAuthToken();
     if (!token) {
       navigate('/login');
@@ -61,7 +76,16 @@ function BlockedImages() {
     const fetchBlockedImages = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${apiUrl}/api/images/blocked?page=${pageDetail.currentPage}&limit=9`, {
+        const queryParams = new URLSearchParams({
+          page: String(pageDetail.currentPage),
+          limit: '9',
+        });
+
+        if (searchQuery) {
+          queryParams.set('search', searchQuery);
+        }
+
+        const res = await fetch(`${apiUrl}/api/images/blocked?${queryParams.toString()}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -92,7 +116,7 @@ function BlockedImages() {
     };
 
     fetchBlockedImages();
-  }, [pageDetail.currentPage, navigate]);
+  }, [pageDetail.currentPage, searchQuery, navigate]);
 
   const handlePageChange = (direction) => {
     setPageDetail((prev) => {
@@ -215,12 +239,52 @@ function BlockedImages() {
 
       <Paper elevation={0} sx={{ border: '1px solid rgba(15, 23, 42, 0.1)', borderRadius: 2, overflow: 'hidden', mt: 2 }}>
         <Box sx={{ px: 2, py: 1.5, backgroundColor: '#f8fafc' }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a' }}>
-            Blocked Images Table
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#64748b' }}>
-            Includes reporter details, message, and linked image metadata.
-          </Typography>
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={1.5}
+            alignItems={{ xs: 'stretch', md: 'center' }}
+            justifyContent="space-between"
+            useFlexGap
+            flexWrap="wrap"
+          >
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                Blocked Images Table
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
+                Includes reporter details, message, and linked image metadata.
+              </Typography>
+            </Box>
+
+            <TextField
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by reporter name or email"
+              variant="outlined"
+              size="small"
+              sx={{
+                width: { xs: '100%', md: 360 },
+                maxWidth: '100%',
+                flexShrink: 0,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#fff',
+                  '&:hover fieldset': {
+                    borderColor: '#0369a1',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#0369a1',
+                  },
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchRoundedIcon fontSize="small" sx={{ color: '#0369a1' }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Stack>
         </Box>
         <Divider />
         <TableContainer sx={{ maxHeight: '68vh' }}>
