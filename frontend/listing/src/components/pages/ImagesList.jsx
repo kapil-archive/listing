@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
+import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Portal from '@mui/material/Portal';
 import Dialog from '@mui/material/Dialog';
@@ -249,11 +251,39 @@ function ImagesList() {
                     boxShadow: '0 12px 28px rgba(15, 23, 42, 0.05)',
                 }}
             >
-               
+                <Box sx={{ px: 1, display: { xs: 'block', md: 'none' } }}>
+                    <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        label="Category"
+                        value={selectedCategory}
+                        onChange={handleCategoryChange}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 2.5,
+                                backgroundColor: 'rgba(255, 255, 255, 0.94)',
+                                '&:hover fieldset': {
+                                    borderColor: '#0369a1',
+                                },
+                                '&.Mui-focused fieldset': {
+                                    borderColor: '#0369a1',
+                                },
+                            },
+                        }}
+                    >
+                        {DEFAULT_CATEGORY.map((cat) => (
+                            <MenuItem key={cat.id} value={cat.name}>
+                                {cat.name}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </Box>
                 <Stack
                     direction="row"
                     spacing={1}
                     sx={{
+                        display: { xs: 'none', md: 'flex' },
                         px: 1,
                         overflowX: 'auto',
                         pb: 0.25,
