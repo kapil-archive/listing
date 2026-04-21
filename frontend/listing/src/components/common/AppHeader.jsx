@@ -37,12 +37,14 @@ function AppHeader() {
   const isImagesPage = location.pathname === '/images';
   const activeSearchQuery = useMemo(() => searchParams.get('search') || '', [searchParams]);
   const activeCategory = useMemo(() => searchParams.get('category') || 'All', [searchParams]);
-  const hasExpandedFilters = Boolean(activeSearchQuery || activeCategory !== 'All');
 
   useEffect(() => {
     setSearchInput(activeSearchQuery);
-    setSearchOpen(hasExpandedFilters);
-  }, [activeSearchQuery, hasExpandedFilters, isImagesPage]);
+
+    if (activeSearchQuery) {
+      setSearchOpen(true);
+    }
+  }, [activeSearchQuery]);
 
   useEffect(() => {
     if (!isImagesPage) {
@@ -115,8 +117,10 @@ function AppHeader() {
   }, []);
 
   const handleSearchClose = useCallback(() => {
+    setSearchInput('');
+    applySearch('');
     setSearchOpen(false);
-  }, []);
+  }, [applySearch]);
 
   const searchField = isImagesPage ? (
     <Box

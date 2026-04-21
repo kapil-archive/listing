@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Portal from '@mui/material/Portal';
 import Dialog from '@mui/material/Dialog';
@@ -239,7 +238,71 @@ function ImagesList() {
                 onSuccess={() => setError('')}
             />
 
-            
+            <Box
+                sx={{
+                    mb: 2.5,
+                    px: { xs: 0.5, md: 0 },
+                    py: 1,
+                    borderRadius: 3,
+                    background: 'linear-gradient(135deg, rgba(248,250,252,0.96) 0%, rgba(240,249,255,0.96) 100%)',
+                    border: '1px solid rgba(14, 116, 144, 0.1)',
+                    boxShadow: '0 12px 28px rgba(15, 23, 42, 0.05)',
+                }}
+            >
+               
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                        px: 1,
+                        overflowX: 'auto',
+                        pb: 0.25,
+                        '&::-webkit-scrollbar': {
+                            height: 6,
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: 'rgba(14, 116, 144, 0.18)',
+                            borderRadius: 999,
+                        },
+                    }}
+                >
+                    {DEFAULT_CATEGORY.map((cat) => {
+                        const isActive = selectedCategory === cat.name;
+
+                        return (
+                            <Button
+                                key={cat.id}
+                                variant={isActive ? 'contained' : 'outlined'}
+                                onClick={() => handleCategoryChange({ target: { value: cat.name } })}
+                                sx={{
+                                    flexShrink: 0,
+                                    px: 2,
+                                    py: 0.9,
+                                    borderRadius: 999,
+                                    fontWeight: 700,
+                                    textTransform: 'none',
+                                    color: isActive ? '#ffffff' : '#0f172a',
+                                    borderColor: isActive ? 'transparent' : 'rgba(14, 116, 144, 0.18)',
+                                    background: isActive
+                                        ? 'linear-gradient(135deg, #0f766e 0%, #0369a1 100%)'
+                                        : 'rgba(255, 255, 255, 0.88)',
+                                    boxShadow: isActive
+                                        ? '0 12px 22px rgba(3, 105, 161, 0.2)'
+                                        : 'none',
+                                    '&:hover': {
+                                        borderColor: isActive ? 'transparent' : 'rgba(14, 116, 144, 0.32)',
+                                        background: isActive
+                                            ? 'linear-gradient(135deg, #0d9488 0%, #0284c7 100%)'
+                                            : 'rgba(240, 249, 255, 0.98)',
+                                    },
+                                }}
+                            >
+                                {cat.name}
+                            </Button>
+                        );
+                    })}
+                </Stack>
+            </Box>
 
             {loading && <Typography>Loading images...</Typography>}
             {error && <Typography color="error">{error}</Typography>}
