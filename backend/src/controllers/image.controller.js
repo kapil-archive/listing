@@ -366,6 +366,7 @@ const getBlockedImages = async (req, res) => {
           $or: [
             { name: { $regex: escapeRegex(search), $options: "i" } },
             { email: { $regex: escapeRegex(search), $options: "i" } },
+            { message: { $regex: escapeRegex(search), $options: "i" } },
           ],
         },
       }

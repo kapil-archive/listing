@@ -259,7 +259,7 @@ function BlockedImages() {
             <TextField
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by reporter name or email"
+              placeholder="Search by reporter name, email, or message"
               variant="outlined"
               size="small"
               sx={{
