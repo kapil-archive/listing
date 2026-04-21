@@ -192,21 +192,29 @@ function ImagesList() {
         setPageDetail({ currentPage: 1, totalPages: 1 });
     }, []);
 
-    const handleSearchChange = useCallback((e) => {
-        setSearchInput(e.target.value);
+    const applySearch = useCallback((value) => {
+        setSearchQuery(value.trim());
+        setPageDetail({ currentPage: 1, totalPages: 1 });
     }, []);
 
+    const handleSearchChange = useCallback((e) => {
+        const nextValue = e.target.value;
+        setSearchInput(nextValue);
+
+        if (!nextValue.trim()) {
+            applySearch(nextValue);
+        }
+    }, [applySearch]);
+
     const handleSearchSubmit = useCallback(() => {
-        setSearchQuery(searchInput.trim());
-        setPageDetail({ currentPage: 1, totalPages: 1 });
-    }, [searchInput]);
+        applySearch(searchInput);
+    }, [applySearch, searchInput]);
 
     const handleSearchKeyDown = useCallback((e) => {
         if (e.key === 'Enter') {
-            setSearchQuery(searchInput.trim());
-            setPageDetail({ currentPage: 1, totalPages: 1 });
+            applySearch(searchInput);
         }
-    }, [searchInput]);
+    }, [applySearch, searchInput]);
 
     const handleReportClick = useCallback((item) => {
         setReportDialog({ active: true, item });
