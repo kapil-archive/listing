@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import SearchIcon from '@mui/icons-material/Search';
+import CloseIcon from '@mui/icons-material/Close';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import InstallPWA from './InstallPWA';
 import { DEFAULT_CATEGORY } from '../pages/category.constants';
@@ -30,7 +31,6 @@ function AppHeader() {
   const [openMobileMenu, setOpenMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
-  const filtersContainerRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -88,13 +88,8 @@ function AppHeader() {
   const handleSearchToggle = useCallback(() => {
     if (!searchOpen) {
       setSearchOpen(true);
-      return;
     }
-
-    if (!searchInput.trim()) {
-      setSearchOpen(false);
-    }
-  }, [searchInput, searchOpen]);
+  }, [searchOpen]);
 
   const handleSearchChange = useCallback((event) => {
     const nextValue = event.target.value;
@@ -107,9 +102,6 @@ function AppHeader() {
 
   const handleSearchSubmit = useCallback(() => {
     applySearch(searchInput);
-    if (!searchInput.trim()) {
-      setSearchOpen(false);
-    }
   }, [applySearch, searchInput]);
 
   const handleSearchKeyDown = useCallback((event) => {
@@ -118,27 +110,16 @@ function AppHeader() {
     }
   }, [handleSearchSubmit]);
 
-  const handleFiltersBlur = useCallback((event) => {
-    window.setTimeout(() => {
-      const activeElement = document.activeElement;
+  const handleSearchButtonMouseDown = useCallback((event) => {
+    event.preventDefault();
+  }, []);
 
-      if (
-        filtersContainerRef.current?.contains(activeElement) ||
-        activeElement?.closest?.('[role="listbox"]') ||
-        activeElement?.closest?.('[role="option"]') ||
-        activeElement?.closest?.('.MuiMenu-paper')
-      ) {
-        return;
-      }
-
-      setSearchOpen(false);
-    }, 0);
+  const handleSearchClose = useCallback(() => {
+    setSearchOpen(false);
   }, []);
 
   const searchField = isImagesPage ? (
     <Box
-      ref={filtersContainerRef}
-      onBlur={handleFiltersBlur}
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -174,8 +155,15 @@ function AppHeader() {
                 fontSize: 14,
               }}
             />
-            <IconButton color="inherit" onClick={handleSearchSubmit}>
+            <IconButton
+              color="inherit"
+              onMouseDown={handleSearchButtonMouseDown}
+              onClick={handleSearchSubmit}
+            >
               <SearchIcon />
+            </IconButton>
+            <IconButton color="inherit" onClick={handleSearchClose}>
+              <CloseIcon fontSize="small" />
             </IconButton>
           </>
         ) : (
