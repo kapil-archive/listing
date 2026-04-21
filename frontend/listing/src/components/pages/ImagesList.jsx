@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
@@ -7,29 +7,29 @@ import Portal from '@mui/material/Portal';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
-import SearchIcon from '@mui/icons-material/Search';
 import { DEFAULT_CATEGORY } from './category.constants';
 import ImageCard from '../common/ImageCard';
 import AdDialog from '../common/AdDialog';
 import ReportDialog from '../common/ReportDialog';
 import { downloadBase64Image } from '../common/utils';
 import Button from '@mui/material/Button';
+import { useSearchParams } from 'react-router-dom';
 const apiUrl = import.meta.env.VITE_BASE_URL;
 const PAGE_WINDOW_SIZE = 10;
 
 function ImagesList() {
     const [allImages, setAllImages] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState('All');
-    const [searchInput, setSearchInput] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [openAd, setOpenAd] = useState({ imageId: null, active: false });
     const [reportDialog, setReportDialog] = useState({ active: false, item: null });
     const [previewDialog, setPreviewDialog] = useState({ open: false, imageUrl: '', title: '' });
+    const [searchParams, setSearchParams] = useSearchParams();
+    const searchQuery = searchParams.get('search') || '';
+    const selectedCategory = searchParams.get('category') || 'All';
     const openAdRef = useRef(openAd);
     const hasTrackedCurrentModalRef = useRef(false);
+    const previousFilterKeyRef = useRef(`${searchQuery}::${selectedCategory}`);
     const [pageDetail, setPageDetail] = useState({
         currentPage: 1,
         totalPages: 1,
@@ -48,6 +48,16 @@ function ImagesList() {
 
 
     useEffect(() => {
+        const nextFilterKey = `${searchQuery}::${selectedCategory}`;
+
+        if (previousFilterKeyRef.current !== nextFilterKey && pageDetail.currentPage !== 1) {
+            previousFilterKeyRef.current = nextFilterKey;
+            setPageDetail((prev) => ({ ...prev, currentPage: 1 }));
+            return;
+        }
+
+        previousFilterKeyRef.current = nextFilterKey;
+
         const fetchImages = async () => {
             try {
                 setLoading(true);
@@ -188,33 +198,18 @@ function ImagesList() {
     const visibleImages = useMemo(() => allImages, [allImages]);
 
     const handleCategoryChange = useCallback((e) => {
-        setSelectedCategory(e.target.value);
-        setPageDetail({ currentPage: 1, totalPages: 1 });
-    }, []);
-
-    const applySearch = useCallback((value) => {
-        setSearchQuery(value.trim());
-        setPageDetail({ currentPage: 1, totalPages: 1 });
-    }, []);
-
-    const handleSearchChange = useCallback((e) => {
         const nextValue = e.target.value;
-        setSearchInput(nextValue);
+        const nextParams = new URLSearchParams(searchParams);
 
-        if (!nextValue.trim()) {
-            applySearch(nextValue);
+        if (nextValue && nextValue !== 'All') {
+            nextParams.set('category', nextValue);
+        } else {
+            nextParams.delete('category');
         }
-    }, [applySearch]);
 
-    const handleSearchSubmit = useCallback(() => {
-        applySearch(searchInput);
-    }, [applySearch, searchInput]);
-
-    const handleSearchKeyDown = useCallback((e) => {
-        if (e.key === 'Enter') {
-            applySearch(searchInput);
-        }
-    }, [applySearch, searchInput]);
+        setSearchParams(nextParams);
+        setPageDetail({ currentPage: 1, totalPages: 1 });
+    }, [searchParams, setSearchParams]);
 
     const handleReportClick = useCallback((item) => {
         setReportDialog({ active: true, item });
@@ -232,9 +227,9 @@ function ImagesList() {
 
     return (
         <Box sx={{ p: { xs: 1, md: 2 }, pb: { xs: 14, md: 12 } }}>
-            <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2, textAlign: 'center' }}>
+            {/* <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700, marginBottom: 2, textAlign: 'center' }}>
                 All Categories
-            </Typography>
+            </Typography> */}
 
             {/* Ads Dialog */}
             <AdDialog openAd={openAd} setOpenAd={setOpenAd} />
@@ -244,73 +239,7 @@ function ImagesList() {
                 onSuccess={() => setError('')}
             />
 
-            {/* Search Bar + Category Filter */}
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-                <TextField
-                    select
-                    label="Category"
-                    value={selectedCategory}
-                    onChange={handleCategoryChange}
-                    sx={{
-                        minWidth: 160,
-                        '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                            backgroundColor: '#f0f9ff',
-                            '&:hover fieldset': { borderColor: '#0369a1' },
-                            '&.Mui-focused fieldset': { borderColor: '#0369a1' },
-                        },
-                    }}
-                >
-                    {/* <MenuItem value="">All</MenuItem> */}
-                    
-                    {DEFAULT_CATEGORY.map((cat) => (
-                        <MenuItem key={cat.id} value={cat.name}>{cat.name}</MenuItem>
-                    ))}
-                </TextField>
-
-                <Box
-                    sx={{
-                        flex: 1,
-                        maxWidth: 500,
-                        minWidth: 200,
-                        display: 'flex',
-                        alignItems: 'center',
-                        borderRadius: 2,
-                        border: '1px solid rgba(0,0,0,0.23)',
-                        backgroundColor: '#f0f9ff',
-                        overflow: 'hidden',
-                        '&:hover': { borderColor: '#0369a1' },
-                        '&:focus-within': { borderColor: '#0369a1', borderWidth: '2px' },
-                    }}
-                >
-                    <TextField
-                        placeholder="Search by image name..."
-                        value={searchInput}
-                        onChange={handleSearchChange}
-                        onKeyDown={handleSearchKeyDown}
-                        variant="standard"
-                        InputProps={{ disableUnderline: true }}
-                        sx={{
-                            flex: 1,
-                            px: 1.5,
-                            '& .MuiInputBase-root': { backgroundColor: 'transparent' },
-                        }}
-                    />
-                    <IconButton
-                        onClick={handleSearchSubmit}
-                        sx={{
-                            borderRadius: 0,
-                            px: 1.5,
-                            height: '100%',
-                            color: '#ffffff',
-                            backgroundColor: '#0369a1',
-                            '&:hover': { backgroundColor: '#0284c7' },
-                        }}
-                    >
-                        <SearchIcon />
-                    </IconButton>
-                </Box>
-            </Box>
+            
 
             {loading && <Typography>Loading images...</Typography>}
             {error && <Typography color="error">{error}</Typography>}

@@ -1,19 +1,24 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
+import InputBase from '@mui/material/InputBase';
+import MenuItem from '@mui/material/MenuItem';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
-import { useLocation, useNavigate } from 'react-router-dom';
+import SearchIcon from '@mui/icons-material/Search';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import InstallPWA from './InstallPWA';
+import { DEFAULT_CATEGORY } from '../pages/category.constants';
 
 const NAV_OPTIONS = [
   { label: 'Privacy and policy', path: '/privacy-policy' },
@@ -23,8 +28,27 @@ const NAV_OPTIONS = [
 
 function AppHeader() {
   const [openMobileMenu, setOpenMobileMenu] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const filtersContainerRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isImagesPage = location.pathname === '/images';
+  const activeSearchQuery = useMemo(() => searchParams.get('search') || '', [searchParams]);
+  const activeCategory = useMemo(() => searchParams.get('category') || 'All', [searchParams]);
+  const hasExpandedFilters = Boolean(activeSearchQuery || activeCategory !== 'All');
+
+  useEffect(() => {
+    setSearchInput(activeSearchQuery);
+    setSearchOpen(hasExpandedFilters);
+  }, [activeSearchQuery, hasExpandedFilters, isImagesPage]);
+
+  useEffect(() => {
+    if (!isImagesPage) {
+      setSearchOpen(false);
+    }
+  }, [isImagesPage]);
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -34,6 +58,157 @@ function AppHeader() {
   const isActivePath = (path) => {
     return location.pathname === path;
   };
+
+  const applySearch = useCallback((value) => {
+    const trimmedValue = value.trim();
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (trimmedValue) {
+      nextParams.set('search', trimmedValue);
+    } else {
+      nextParams.delete('search');
+    }
+
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
+
+  const handleCategoryChange = useCallback((event) => {
+    const nextValue = event.target.value;
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (nextValue && nextValue !== 'All') {
+      nextParams.set('category', nextValue);
+    } else {
+      nextParams.delete('category');
+    }
+
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
+
+  const handleSearchToggle = useCallback(() => {
+    if (!searchOpen) {
+      setSearchOpen(true);
+      return;
+    }
+
+    if (!searchInput.trim()) {
+      setSearchOpen(false);
+    }
+  }, [searchInput, searchOpen]);
+
+  const handleSearchChange = useCallback((event) => {
+    const nextValue = event.target.value;
+    setSearchInput(nextValue);
+
+    if (!nextValue.trim()) {
+      applySearch(nextValue);
+    }
+  }, [applySearch]);
+
+  const handleSearchSubmit = useCallback(() => {
+    applySearch(searchInput);
+    if (!searchInput.trim()) {
+      setSearchOpen(false);
+    }
+  }, [applySearch, searchInput]);
+
+  const handleSearchKeyDown = useCallback((event) => {
+    if (event.key === 'Enter') {
+      handleSearchSubmit();
+    }
+  }, [handleSearchSubmit]);
+
+  const handleFiltersBlur = useCallback((event) => {
+    window.setTimeout(() => {
+      const activeElement = document.activeElement;
+
+      if (
+        filtersContainerRef.current?.contains(activeElement) ||
+        activeElement?.closest?.('[role="listbox"]') ||
+        activeElement?.closest?.('[role="option"]') ||
+        activeElement?.closest?.('.MuiMenu-paper')
+      ) {
+        return;
+      }
+
+      setSearchOpen(false);
+    }, 0);
+  }, []);
+
+  const searchField = isImagesPage ? (
+    <Box
+      ref={filtersContainerRef}
+      onBlur={handleFiltersBlur}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        minWidth: { xs: 'auto', md: searchOpen ? 260 : 'auto' },
+        width: { xs: searchOpen ? '100%' : 'auto', md: searchOpen ? 260 : 'auto' },
+        transition: 'width 0.25s ease, min-width 0.25s ease',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          width: searchOpen ? '100%' : 'auto',
+          border: searchOpen ? '1px solid rgba(3, 105, 161, 0.22)' : '1px solid transparent',
+          borderRadius: 999,
+          backgroundColor: searchOpen ? '#f0f9ff' : 'transparent',
+          overflow: 'hidden',
+          transition: 'all 0.25s ease',
+        }}
+      >
+        {searchOpen ? (
+          <>
+            <InputBase
+              autoFocus
+              placeholder="Search images..."
+              value={searchInput}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
+              sx={{
+                flex: 1,
+                px: 1.5,
+                fontSize: 14,
+              }}
+            />
+            <IconButton color="inherit" onClick={handleSearchSubmit}>
+              <SearchIcon />
+            </IconButton>
+          </>
+        ) : (
+          <IconButton color="inherit" onClick={handleSearchToggle}>
+            <SearchIcon />
+          </IconButton>
+        )}
+      </Box>
+
+    </Box>
+  ) : null;
+
+  const categoryField = isImagesPage && searchOpen ? (
+    <TextField
+      select
+      size="small"
+      value={activeCategory}
+      onChange={handleCategoryChange}
+      sx={{
+        minWidth: { xs: 120, md: 150 },
+        '& .MuiOutlinedInput-root': {
+          borderRadius: 999,
+          backgroundColor: '#f0f9ff',
+          '&:hover fieldset': { borderColor: '#0369a1' },
+          '&.Mui-focused fieldset': { borderColor: '#0369a1' },
+        },
+      }}
+    >
+      {DEFAULT_CATEGORY.map((cat) => (
+        <MenuItem key={cat.id} value={cat.name}>{cat.name}</MenuItem>
+      ))}
+    </TextField>
+  ) : null;
 
   return (
     <>
@@ -50,7 +225,7 @@ function AppHeader() {
           backdropFilter: 'blur(8px)',
         }}
       >
-        <Toolbar sx={{ px: { xs: 1.5, md: 2 } }}>
+        <Toolbar sx={{ px: { xs: 1.5, md: 2 }, gap: 1 }}>
           <Stack
             direction="row"
             spacing={1}
@@ -64,7 +239,14 @@ function AppHeader() {
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: 'none', md: 'flex' } }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ display: { xs: 'none', md: 'flex' }, flexShrink: 0 }}
+          >
+            {categoryField}
+            {searchField}
             {NAV_OPTIONS.map((item, index) => (
               <Button
                 key={`${item.label}-${index}`}
@@ -78,7 +260,14 @@ function AppHeader() {
             <InstallPWA />
           </Stack>
 
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: 'flex', md: 'none' } }}>
+          <Stack
+            direction="row"
+            spacing={0.5}
+            alignItems="center"
+            sx={{ display: { xs: 'flex', md: 'none' }, flexShrink: 0, flexGrow: searchOpen ? 1 : 0 }}
+          >
+            {categoryField}
+            {searchField}
             <InstallPWA />
             <IconButton color="inherit" onClick={() => setOpenMobileMenu(true)}>
               <MenuIcon />
