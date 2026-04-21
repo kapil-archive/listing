@@ -17,7 +17,7 @@ import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import { useNavigate } from 'react-router-dom';
 import { DEFAULT_CATEGORY } from './category.constants';
-import { getAuthToken } from '../common/utils';
+import { clearAuthSession, getAuthToken } from '../common/utils';
 
 function AdminUpload() {
     const navigate = useNavigate();
@@ -64,6 +64,7 @@ function AdminUpload() {
 
             const token = getAuthToken();
             if (!token) {
+                clearAuthSession();
                 navigate('/login');
                 return;
             }
@@ -79,6 +80,7 @@ function AdminUpload() {
             const data = await res.json();
 
             if (res.status === 401 || res.status === 403) {
+                clearAuthSession();
                 navigate('/login');
                 return;
             }

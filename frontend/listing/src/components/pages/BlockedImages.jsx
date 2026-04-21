@@ -23,7 +23,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import { useNavigate } from 'react-router-dom';
-import { getAuthToken } from '../common/utils';
+import { clearAuthSession, getAuthToken } from '../common/utils';
 
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
@@ -69,6 +69,7 @@ function BlockedImages() {
   useEffect(() => {
     const token = getAuthToken();
     if (!token) {
+      clearAuthSession();
       navigate('/login');
       return;
     }
@@ -93,6 +94,7 @@ function BlockedImages() {
         const data = await res.json();
 
         if (res.status === 401 || res.status === 403) {
+          clearAuthSession();
           navigate('/login');
           return;
         }
@@ -168,6 +170,7 @@ function BlockedImages() {
 
       const token = getAuthToken();
       if (!token) {
+        clearAuthSession();
         navigate('/login');
         return;
       }
@@ -180,6 +183,7 @@ function BlockedImages() {
       const data = await res.json();
 
       if (res.status === 401 || res.status === 403) {
+        clearAuthSession();
         navigate('/login');
         return;
       }

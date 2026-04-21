@@ -29,7 +29,7 @@ import SpaceDashboardRoundedIcon from '@mui/icons-material/SpaceDashboardRounded
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { getAuthToken, getAuthUser, removeAuthToken, removeAuthUser, setAuthToken, setAuthUser } from '../common/utils';
+import { clearAuthSession, getAuthToken, getAuthUser, removeAuthToken, removeAuthUser, setAuthToken, setAuthUser } from '../common/utils';
 
 const apiUrl = import.meta.env.VITE_BASE_URL;
 
@@ -184,6 +184,7 @@ function AdminPanel() {
     const storedUser = getAuthUser();
 
     if (!token || !storedUser?.isAdmin) {
+      clearAuthSession();
       navigate('/login', { replace: true });
     }
   }, [navigate]);
@@ -239,6 +240,12 @@ function AdminPanel() {
     try {
       setResetLoading(true);
       const token = getAuthToken();
+      if (!token) {
+        clearAuthSession();
+        navigate('/login', { replace: true });
+        return;
+      }
+
       const res = await fetch(`${apiUrl}/api/auth/password/change`, {
         method: 'POST',
         headers: {
@@ -249,6 +256,12 @@ function AdminPanel() {
       });
 
       const data = await res.json();
+      if (res.status === 401 || res.status === 403) {
+        clearAuthSession();
+        navigate('/login', { replace: true });
+        return;
+      }
+
       if (!res.ok) {
         throw new Error(data.message || 'Failed to change password');
       }
