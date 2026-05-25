@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 
-const sendEmail = async ({ to, subject, text, html }) => {
+const sendEmail = async ({to, subject, text, html}) => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.warn("sendEmail: email credentials not configured. Skipping send.");
     return false;

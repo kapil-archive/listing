@@ -1,35 +1,35 @@
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const imageSchema = new mongoose.Schema(
-  {
-    categoryId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      required: true,
-      index: true,
-    },
+    {
+      categoryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+        required: true,
+        index: true,
+      },
 
-    image: {
-      data: Buffer,
-      contentType: String,
+      image: {
+        data: Buffer,
+        contentType: String,
+      },
+      thumb: {
+        data: Buffer,
+        contentType: String,
+      },
+      fileName: String,
+      size: Number,
+      favouriteCount: {
+        type: Number,
+        default: 0,
+      },
+      downloadCount: {
+        type: Number,
+        default: 0,
+      },
     },
-    thumb: {
-      data: Buffer,
-      contentType: String,
-    },
-    fileName: String,
-    size: Number,
-    favouriteCount:{
-      type: Number,
-      default: 0,
-    },
-    downloadCount: {
-      type: Number,
-      default: 0,
-    },
-  },
-  { timestamps: true }
+    {timestamps: true},
 );
 
 

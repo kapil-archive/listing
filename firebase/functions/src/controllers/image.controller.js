@@ -8,22 +8,26 @@ const sharp = require("sharp");
 
 const uploadImage = async (req, res) => {
   try {
-    const { categoryId, categoryName } = req.body || {};
+    const {categoryId, categoryName} = req.body || {};
+    const filesPayload = req.files || {};
     const files = [
-      ...(req.files?.images || []),
-      ...(req.files?.image || []),
+      ...(filesPayload.images || []),
+      ...(filesPayload.image || []),
       ...(req.file ? [req.file] : []),
     ];
 
     if (!files.length) {
-      return res.status(400).json({ message: "No files uploaded" });
+      return res.status(400).json({message: "No files uploaded"});
     }
 
     let resolvedCategoryId = categoryId;
 
     // Support direct ObjectId payload.
-    if (resolvedCategoryId && !mongoose.Types.ObjectId.isValid(resolvedCategoryId)) {
-      return res.status(400).json({ message: "Invalid categoryId" });
+    if (
+      resolvedCategoryId &&
+      !mongoose.Types.ObjectId.isValid(resolvedCategoryId)
+    ) {
+      return res.status(400).json({message: "Invalid categoryId"});
     }
 
     // Support category name payload by creating/finding a category.
@@ -31,43 +35,45 @@ const uploadImage = async (req, res) => {
       const trimmedName = categoryName.trim();
 
       if (!trimmedName) {
-        return res.status(400).json({ message: "Invalid categoryName" });
+        return res.status(400).json({message: "Invalid categoryName"});
       }
 
       const category = await Category.findOneAndUpdate(
-        { name: trimmedName },
-        { $setOnInsert: { name: trimmedName } },
-        { new: true, upsert: true }
+          {name: trimmedName},
+          {$setOnInsert: {name: trimmedName}},
+          {new: true, upsert: true},
       );
 
       resolvedCategoryId = category._id;
     }
 
     if (!resolvedCategoryId) {
-      return res.status(400).json({ message: "categoryId or categoryName is required" });
+      return res.status(400).json({
+        message: "categoryId or categoryName is required",
+      });
     }
 
 
     const uploadedImages = await Promise.all(
-      files.map(async (file) => {
-        const thumbBuffer = await sharp(file.buffer)
-          .resize(200, 200, { fit: "inside" })
-          .toBuffer();
+        files.map(async (file) => {
+          const thumbBuffer = await sharp(file.buffer)
+              .resize(200, 200, {fit: "inside"})
+              .toBuffer();
 
-        return Image.create({
-          categoryId: resolvedCategoryId,
-          image: {
-            data: file.buffer,
-            contentType: file.mimetype,
-          },
-          thumb: {
-            data: thumbBuffer,
-            contentType: file.mimetype,
-          },
-          fileName: file.originalname,
-          size: file.size,
-        });
-      })
+          return Image.create({
+            categoryId: resolvedCategoryId,
+            image: {
+              data: file.buffer,
+              contentType: file.mimetype,
+            },
+            thumb: {
+              data: thumbBuffer,
+              contentType: file.mimetype,
+            },
+            fileName: file.originalname,
+            size: file.size,
+          });
+        }),
     );
 
     res.status(201).json({
@@ -77,20 +83,20 @@ const uploadImage = async (req, res) => {
     });
   } catch (err) {
     console.error("Image upload failed:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({message: err.message});
   }
 };
 
 // Escapes special regex characters to prevent ReDoS
-const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const getAllImages = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const searchQuery = req.query.search || '';
-    const categoryFilter = req.query.category || '';
+    const searchQuery = req.query.search || "";
+    const categoryFilter = req.query.category || "";
 
     // Build the $match filter based on category and/or search
     const buildMatchStage = () => {
@@ -99,29 +105,36 @@ const getAllImages = async (req, res) => {
       const filter = {};
 
       if (categoryFilter) {
-        filter.categoryName = { $regex: `^${escapeRegex(categoryFilter)}$`, $options: 'i' };
+        filter.categoryName = {
+          $regex: `^${escapeRegex(categoryFilter)}$`,
+          $options: "i",
+        };
       }
 
       if (searchQuery) {
         if (categoryFilter) {
           // Category already fixed — search only within file names
-          filter.fileName = { $regex: escapeRegex(searchQuery), $options: 'i' };
+          filter.fileName = {
+            $regex: escapeRegex(searchQuery),
+            $options: "i",
+          };
         } else {
           filter.$or = [
-            { fileName: { $regex: escapeRegex(searchQuery), $options: 'i' } },
-            { categoryName: { $regex: escapeRegex(searchQuery), $options: 'i' } },
+            {fileName: {$regex: escapeRegex(searchQuery), $options: "i"}},
+            {categoryName: {$regex: escapeRegex(searchQuery), $options: "i"}},
           ];
         }
       }
 
-      return { $match: filter };
+      return {$match: filter};
     };
 
     const matchStage = buildMatchStage();
 
-    // Use aggregation pipeline for better performance: count + fetch in single query
+    // Use aggregation pipeline for better performance.
+    // Count + fetch happens in a single query.
     const [result] = await Image.aggregate([
-      { $sort: { createdAt: -1 } },
+      {$sort: {createdAt: -1}},
       {
         $lookup: {
           from: "categories",
@@ -132,16 +145,16 @@ const getAllImages = async (req, res) => {
       },
       {
         $addFields: {
-          categoryName: { $arrayElemAt: ["$categoryData.name", 0] },
+          categoryName: {$arrayElemAt: ["$categoryData.name", 0]},
         },
       },
       ...(matchStage ? [matchStage] : []),
       {
         $facet: {
-          metadata: [{ $count: "total" }],
+          metadata: [{$count: "total"}],
           data: [
-            { $skip: skip },
-            { $limit: limit },
+            {$skip: skip},
+            {$limit: limit},
             {
               $project: {
                 _id: 1,
@@ -149,8 +162,8 @@ const getAllImages = async (req, res) => {
                 fileName: 1,
                 size: 1,
                 createdAt: 1,
-                favouriteCount: { $ifNull: ["$favouriteCount", 0] },
-                downloadCount: { $ifNull: ["$downloadCount", 0] },
+                favouriteCount: {$ifNull: ["$favouriteCount", 0]},
+                downloadCount: {$ifNull: ["$downloadCount", 0]},
                 category: {
                   $ifNull: ["$categoryName", "Unknown"],
                 },
@@ -164,9 +177,15 @@ const getAllImages = async (req, res) => {
       },
     ]);
 
-    const total = result.metadata[0]?.total || 0;
+    const total =
+      result &&
+      result.metadata &&
+      result.metadata[0] &&
+      result.metadata[0].total ?
+        result.metadata[0].total :
+        0;
     const images = result.data || [];
-   
+
 
     // Format images with base64 conversion only for thumb
     const formattedImages = images.map((item) => ({
@@ -180,9 +199,12 @@ const getAllImages = async (req, res) => {
       createdAt: item.createdAt,
       favouriteCount: item.favouriteCount,
       downloadCount: item.downloadCount,
-      thumbUrl: item.thumbData && item.thumbContentType
-        ? `data:${item.thumbContentType};base64,${item.thumbData.toString("base64")}`
-        : null,
+      thumbUrl: item.thumbData && item.thumbContentType ?
+          [
+            `data:${item.thumbContentType};base64,`,
+            item.thumbData.toString("base64"),
+          ].join("") :
+          null,
     }));
 
     res.status(200).json({
@@ -193,36 +215,38 @@ const getAllImages = async (req, res) => {
     });
   } catch (err) {
     console.error("Fetching images failed:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({message: err.message});
   }
 };
 
 const updateImageStats = async (req, res) => {
   try {
     // const { imageId, isLiked, isDisliked, isDownload } = req.body || {};
-    const { imageId, isLiked, isDownload } = req.body || {};
+    const {imageId, isLiked, isDownload} = req.body || {};
 
     if (!imageId) {
-      return res.status(400).json({ message: "Invalid imageId" });
+      return res.status(400).json({message: "Invalid imageId"});
     }
     const image = await Image.findById(imageId);
 
     let originalImage = null;
-    
-    
+
     if (!image) {
-      return res.status(404).json({ message: "Image not found" });
+      return res.status(404).json({message: "Image not found"});
     }
 
     if (isLiked) {
       image.favouriteCount = (image.favouriteCount || 0) + 1;
-    }
-    else if (isDownload) {
+    } else if (isDownload) {
       image.downloadCount = (image.downloadCount || 0) + 1;
-      // originalImage = image.image;
-      originalImage = image.image?.data && image.image?.contentType
-        ? `data:${image.image.contentType};base64,${image.image.data.toString("base64")}`
-        : null;
+      const hasImageData =
+        image.image && image.image.data && image.image.contentType;
+      originalImage = hasImageData ?
+          [
+            `data:${image.image.contentType};base64,`,
+            image.image.data.toString("base64"),
+          ].join("") :
+        null;
     }
 
     await image.save();
@@ -232,35 +256,40 @@ const updateImageStats = async (req, res) => {
       data: {
         favouriteCount: image.favouriteCount,
         downloadCount: image.downloadCount,
-        originalImage
+        originalImage,
       },
     });
   } catch (err) {
     console.error("Updating images stats failed:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({message: err.message});
   }
-}
+};
 
 const getOriginalImage = async (req, res) => {
   try {
-    const { imageId } = req.params || {};
+    const {imageId} = req.params || {};
 
     if (!imageId || !mongoose.Types.ObjectId.isValid(imageId)) {
-      return res.status(400).json({ message: "Invalid imageId" });
+      return res.status(400).json({message: "Invalid imageId"});
     }
 
     const image = await Image.findById(imageId).select("image fileName");
 
     if (!image) {
-      return res.status(404).json({ message: "Image not found" });
+      return res.status(404).json({message: "Image not found"});
     }
 
-    const originalImage = image.image?.data && image.image?.contentType
-      ? `data:${image.image.contentType};base64,${image.image.data.toString("base64")}`
-      : null;
+    const hasImageData =
+        image.image && image.image.data && image.image.contentType;
+    const originalImage = hasImageData ?
+        [
+          `data:${image.image.contentType};base64,`,
+          image.image.data.toString("base64"),
+        ].join("") :
+      null;
 
     if (!originalImage) {
-      return res.status(404).json({ message: "Original image not found" });
+      return res.status(404).json({message: "Original image not found"});
     }
 
     res.status(200).json({
@@ -273,7 +302,7 @@ const getOriginalImage = async (req, res) => {
     });
   } catch (err) {
     console.error("Fetching original image failed:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({message: err.message});
   }
 };
 
@@ -287,40 +316,42 @@ const getOriginalImage = async (req, res) => {
 // report image
 const reportImage = async (req, res) => {
   try {
-    const { categoryId, imageId, name, email, message } = req.body || {};
+    const {categoryId, imageId, name, email, message} = req.body || {};
 
     if (!categoryId || !mongoose.Types.ObjectId.isValid(categoryId)) {
-      return res.status(400).json({ message: "Invalid categoryId" });
+      return res.status(400).json({message: "Invalid categoryId"});
     }
 
     if (!imageId || !mongoose.Types.ObjectId.isValid(imageId)) {
-      return res.status(400).json({ message: "Invalid imageId" });
+      return res.status(400).json({message: "Invalid imageId"});
     }
 
-    const trimmedName = name?.trim();
-    const trimmedEmail = email?.trim().toLowerCase();
-    const trimmedMessage = message?.trim();
+    const trimmedName = name && name.trim();
+    const trimmedEmail = email && email.trim().toLowerCase();
+    const trimmedMessage = message && message.trim();
 
     if (!trimmedName) {
-      return res.status(400).json({ message: "Name is required" });
+      return res.status(400).json({message: "Name is required"});
     }
 
     if (!trimmedEmail) {
-      return res.status(400).json({ message: "Email is required" });
+      return res.status(400).json({message: "Email is required"});
     }
 
     if (!trimmedMessage) {
-      return res.status(400).json({ message: "Message is required" });
+      return res.status(400).json({message: "Message is required"});
     }
 
     const category = await Category.findById(categoryId).select("_id");
     if (!category) {
-      return res.status(404).json({ message: "Category not found" });
+      return res.status(404).json({message: "Category not found"});
     }
 
-    const image = await Image.findOne({ _id: imageId, categoryId }).select("_id");
+    const image = await Image.findOne({_id: imageId, categoryId}).select("_id");
     if (!image) {
-      return res.status(404).json({ message: "Image not found for this category" });
+      return res.status(404).json({
+        message: "Image not found for this category",
+      });
     }
 
     const reportPayload = {
@@ -348,9 +379,9 @@ const reportImage = async (req, res) => {
     });
   } catch (err) {
     console.error("Reporting image failed:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({message: err.message});
   }
-}
+};
 
 const getBlockedImages = async (req, res) => {
   try {
@@ -359,28 +390,29 @@ const getBlockedImages = async (req, res) => {
     const skip = (page - 1) * limit;
     const search = (req.query.search || "").trim();
 
-    const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const matchStage = search
-      ? {
+    const escapeRegex = (value = "") =>
+      value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matchStage = search ?
+      {
         $match: {
           $or: [
-            { name: { $regex: escapeRegex(search), $options: "i" } },
-            { email: { $regex: escapeRegex(search), $options: "i" } },
-            { message: { $regex: escapeRegex(search), $options: "i" } },
+            {name: {$regex: escapeRegex(search), $options: "i"}},
+            {email: {$regex: escapeRegex(search), $options: "i"}},
+            {message: {$regex: escapeRegex(search), $options: "i"}},
           ],
         },
-      }
-      : null;
+      } :
+      null;
 
     const aggregationPipeline = [
       ...(matchStage ? [matchStage] : []),
-      { $sort: { createdAt: -1 } },
+      {$sort: {createdAt: -1}},
       {
         $facet: {
-          metadata: [{ $count: "total" }],
+          metadata: [{$count: "total"}],
           data: [
-            { $skip: skip },
-            { $limit: limit },
+            {$skip: skip},
+            {$limit: limit},
             {
               $lookup: {
                 from: "categories",
@@ -401,7 +433,10 @@ const getBlockedImages = async (req, res) => {
                 size: 1,
                 createdAt: 1,
                 category: {
-                  $ifNull: [{ $arrayElemAt: ["$categoryData.name", 0] }, "Unknown"],
+                  $ifNull: [
+                    {$arrayElemAt: ["$categoryData.name", 0]},
+                    "Unknown",
+                  ],
                 },
                 reportImageData: "$image.data",
                 reportImageContentType: "$image.contentType",
@@ -414,8 +449,12 @@ const getBlockedImages = async (req, res) => {
 
     const [result] = await Report.aggregate(aggregationPipeline);
 
-    const total = result?.metadata?.[0]?.total || 0;
-    const blockedImages = result?.data || [];
+    const total =
+      result &&
+      result.metadata &&
+      result.metadata[0] &&
+      result.metadata[0].total ? result.metadata[0].total : 0;
+    const blockedImages = (result && result.data) || [];
 
     const data = blockedImages.map((item) => ({
       reportId: item._id,
@@ -428,9 +467,12 @@ const getBlockedImages = async (req, res) => {
       size: item.size,
       category: item.category,
       createdAt: item.createdAt,
-      reportImageUrl: item.reportImageData && item.reportImageContentType
-        ? `data:${item.reportImageContentType};base64,${item.reportImageData.toString("base64")}`
-        : null,
+      reportImageUrl: item.reportImageData && item.reportImageContentType ?
+          [
+            `data:${item.reportImageContentType};base64,`,
+            item.reportImageData.toString("base64"),
+          ].join("") :
+        null,
     }));
 
     res.status(200).json({
@@ -442,8 +484,15 @@ const getBlockedImages = async (req, res) => {
     });
   } catch (err) {
     console.error("Fetching blocked images failed:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({message: err.message});
   }
 };
 
-module.exports = { uploadImage, getAllImages, updateImageStats, getOriginalImage, reportImage, getBlockedImages };
+module.exports = {
+  uploadImage,
+  getAllImages,
+  updateImageStats,
+  getOriginalImage,
+  reportImage,
+  getBlockedImages,
+};
