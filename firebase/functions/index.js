@@ -1,32 +1,47 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
-const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
+const {setGlobalOptions} = require("firebase-functions/v2");
+const {onRequest} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+const app = require("./src/app");
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+setGlobalOptions({maxInstances: 10});
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+let mongoConnectionPromise;
+
+const connectToMongo = async () => {
+	if (mongoose.connection.readyState === 1) {
+		return;
+	}
+
+	if (!process.env.MONGO_URI) {
+		throw new Error("MONGO_URI is not configured");
+	}
+
+	if (!mongoConnectionPromise) {
+		mongoConnectionPromise = mongoose.connect(process.env.MONGO_URI)
+				.then(() => {
+					logger.info("Connected to MongoDB");
+				})
+				.catch((error) => {
+					mongoConnectionPromise = null;
+					throw error;
+				});
+	}
+
+	await mongoConnectionPromise;
+};
+
+exports.api = onRequest(async (req, res) => {
+	try {
+		await connectToMongo();
+		return app(req, res);
+	} catch (error) {
+		logger.error("MongoDB connection failed", error);
+		return res.status(500).json({
+			success: false,
+			message: "Database connection failed",
+		});
+	}
+});

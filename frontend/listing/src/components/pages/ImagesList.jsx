@@ -16,6 +16,9 @@ import { downloadBase64Image } from '../common/utils';
 import Button from '@mui/material/Button';
 import { useSearchParams } from 'react-router-dom';
 const apiUrl = import.meta.env.VITE_BASE_URL;
+console.log('====================================');
+console.log("Api Url --- ",apiUrl);
+console.log('====================================');
 const PAGE_WINDOW_SIZE = 10;
 
 function ImagesList() {
@@ -71,8 +74,14 @@ function ImagesList() {
                 if (selectedCategory && selectedCategory !== 'All') {
                     params.set('category', selectedCategory);
                 }
+                console.log('====================================');
+                console.log("${apiUrl}/api/images?${params} -- ",`${apiUrl}/api/images?${params}`);
+                console.log('====================================');
                 const res = await fetch(`${apiUrl}/api/images?${params}`);
                 const data = await res.json();
+                console.log('====================================');
+                console.log("res -- ",data);
+                console.log('====================================');
 
                 if (!res.ok) {
                     throw new Error(data.message || 'Failed to fetch images');
