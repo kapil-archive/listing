@@ -191,10 +191,17 @@ function ImagesList() {
             }
         };
 
-        window.googletag.pubads().addEventListener("impressionViewable", onImpressionViewable);
+        window.googletag = window.googletag || { cmd: [] };
+        window.googletag.cmd.push(() => {
+            window.googletag.pubads().addEventListener("impressionViewable", onImpressionViewable);
+        });
 
         return () => {
-            window.googletag.pubads().removeEventListener("impressionViewable", onImpressionViewable);
+            if (window.googletag?.cmd) {
+                window.googletag.cmd.push(() => {
+                    window.googletag.pubads().removeEventListener("impressionViewable", onImpressionViewable);
+                });
+            }
         };
     }, []);
 
