@@ -9,7 +9,7 @@ const uploadImage = async (req, res) => {
   try {
     const {categoryId, categoryName} = req.body || {};
     const filesPayload = req.files || {};
-    const files = [
+    const files = Array.isArray(filesPayload) ? filesPayload : [
       ...(filesPayload.images || []),
       ...(filesPayload.image || []),
       ...(req.file ? [req.file] : []),

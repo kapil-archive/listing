@@ -4,11 +4,13 @@
 const requestLogger = (req, res, next) => {
   try {
     const cl = req.headers["content-length"] || "(none)";
+    const ct = req.headers["content-type"] || "(none)";
     console.info(
-      "[requestLogger] %s %s content-length=%s",
+      "[requestLogger] %s %s content-length=%s content-type=%s",
       req.method,
       req.url,
       cl,
+      ct,
     );
 
     req.on("aborted", () => {
@@ -19,15 +21,20 @@ const requestLogger = (req, res, next) => {
       );
     });
 
+    req.on("end", () => {
+      console.info("[requestLogger] request stream ended for %s %s", req.method, req.url);
+    });
+
     if (req.socket) {
       req.socket.on("close", (hadError) => {
-        if (hadError) {
-          console.warn(
-            "[requestLogger] socket closed with error for %s %s",
-            req.method,
-            req.url,
-          );
-        }
+        console.warn(
+          "[requestLogger] socket close for %s %s hadError=%s bytesRead=%d bytesWritten=%d",
+          req.method,
+          req.url,
+          hadError,
+          req.socket.bytesRead,
+          req.socket.bytesWritten,
+        );
       });
     }
   } catch (e) {

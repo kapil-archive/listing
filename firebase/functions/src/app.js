@@ -7,8 +7,21 @@ const authRoutes = require("./routes/auth.routes");
 const app = express();
 
 app.use(cors());
-app.use(express.json({limit: "10mb"}));
-app.use(express.urlencoded({extended: true}));
+
+const jsonParser = express.json({limit: "20mb"});
+const urlencodedParser = express.urlencoded({extended: true, limit: "20mb"});
+
+app.use((req, res, next) => {
+  const contentType = (req.headers["content-type"] || "").toLowerCase();
+  if (contentType.startsWith("multipart/form-data")) {
+    return next();
+  }
+
+  jsonParser(req, res, (err) => {
+    if (err) return next(err);
+    urlencodedParser(req, res, next);
+  });
+});
 
 app.get("/", (req, res) => {
   res.status(200).send("Firebase API is running");
