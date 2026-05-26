@@ -4,7 +4,9 @@ const errorHandler = require("../common/errorHandler");
 const generateToken = require("../common/generateToken");
 const sendEmail = require("../common/sendEmail");
 const bcrypt = require("bcryptjs");
-const User = require("../models/user.model");
+const {db, FieldValue} = require("../common/firebaseAdmin");
+
+const usersCol = db.collection("users");
 
 const register = async (req, res) => {
   try {
@@ -30,8 +32,9 @@ const register = async (req, res) => {
           res,
       );
     }
-    const existingUser = await User.findOne({email});
-    if (existingUser) {
+    const q = await usersCol.where("email", "==", email).limit(1).get();
+    const existingUserDoc = q.docs[0];
+    if (existingUserDoc && existingUserDoc.exists) {
       return errorHandler(
           {statusCode: 400, message: "Email already exists"},
           req,
@@ -40,14 +43,17 @@ const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({
+    const userRef = await usersCol.add({
       name,
       email,
       password: hashedPassword,
       isAdmin: false,
+      resetPasswordToken: null,
+      resetPasswordExpires: null,
+      createdAt: FieldValue.serverTimestamp(),
     });
 
-    await user.save();
+    await userRef.get();
 
     res.status(201).json({message: "User registered successfully"});
   } catch (error) {
@@ -68,14 +74,16 @@ const login = async (req, res) => {
     );
   }
 
-  const existingUser = await User.findOne({email});
-  if (!existingUser) {
+  const q = await usersCol.where("email", "==", email).limit(1).get();
+  const existingUserDoc = q.docs[0];
+  if (!existingUserDoc || !existingUserDoc.exists) {
     return errorHandler(
         {statusCode: 400, message: "Invalid email or password"},
         req,
         res,
     );
   }
+  const existingUser = existingUserDoc.data();
   const isPasswordValid = await bcrypt.compare(password, existingUser.password);
   if (!isPasswordValid) {
     return errorHandler(
@@ -84,7 +92,6 @@ const login = async (req, res) => {
         res,
     );
   }
-
   if (!existingUser.isAdmin) {
     return errorHandler(
         {statusCode: 403, message: "You dont have admin privileges"},
@@ -92,8 +99,7 @@ const login = async (req, res) => {
         res,
     );
   }
-
-  const token = generateToken(existingUser._id);
+  const token = generateToken(existingUserDoc.id);
 
   res.status(200).json({
     message: "Login successful",
@@ -117,7 +123,10 @@ const forgotPassword = async (req, res) => {
       );
     }
 
-    const existingUser = await User.findOne({email});
+    const q = await usersCol.where("email", "==", email).limit(1).get();
+    const existingUserDoc = q.docs[0];
+    const existingUser =
+      existingUserDoc && existingUserDoc.exists ? existingUserDoc.data() : null;
     if (!existingUser || !existingUser.isAdmin) {
       return errorHandler(
           {
@@ -130,15 +139,17 @@ const forgotPassword = async (req, res) => {
     }
 
     const token = crypto.randomBytes(32).toString("hex");
-    existingUser.resetPasswordToken = token;
-    existingUser.resetPasswordExpires = Date.now() + 3600000; // 1 hour
-    await existingUser.save();
+    await usersCol.doc(existingUserDoc.id).update({
+      resetPasswordToken: token,
+      resetPasswordExpires: Date.now() + 3600000,
+    });
 
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const clientUrl = process.env.CLIENT_URL ||
+      "http://localhost:5173";
     const resetUrl = `${clientUrl}/reset-password?token=${token}`;
     const emailText =
-  `Use the following link to reset your admin password.
-  This link expires in one hour:
+      `Use the following link to reset your admin password.
+This link expires in one hour:
 
 ${resetUrl}`;
 
@@ -157,9 +168,10 @@ ${resetUrl}`;
       message: "Password reset instructions sent. Check your email.",
     };
     if (!emailSent) {
-      response.message =
+      response.message = (
         "Password reset token generated. Use the link returned by " +
-        "the API to reset your password.";
+        "the API to reset your password."
+      );
       response.resetUrl = resetUrl;
       response.token = token;
     }
@@ -185,10 +197,14 @@ const resetPassword = async (req, res) => {
       );
     }
 
-    const existingUser = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: {$gt: Date.now()},
-    });
+    const q = await usersCol
+        .where("resetPasswordToken", "==", token)
+        .where("resetPasswordExpires", ">", Date.now())
+        .limit(1)
+        .get();
+    const existingUserDoc = q.docs[0];
+    const existingUser =
+      existingUserDoc && existingUserDoc.exists ? existingUserDoc.data() : null;
 
     if (!existingUser) {
       return errorHandler(
@@ -209,10 +225,11 @@ const resetPassword = async (req, res) => {
       );
     }
 
-    existingUser.password = await bcrypt.hash(password, 10);
-    existingUser.resetPasswordToken = null;
-    existingUser.resetPasswordExpires = null;
-    await existingUser.save();
+    await usersCol.doc(existingUserDoc.id).update({
+      password: await bcrypt.hash(password, 10),
+      resetPasswordToken: null,
+      resetPasswordExpires: null,
+    });
 
     res.status(200).json({message: "Password has been reset successfully"});
   } catch (error) {
@@ -244,17 +261,16 @@ const changePassword = async (req, res) => {
     }
 
     const userId = req.user.id;
-    const user = await User.findById(userId);
-    if (!user) {
+    const userDoc = await usersCol.doc(userId).get();
+    if (!userDoc || !userDoc.exists) {
       return errorHandler(
           {statusCode: 404, message: "User not found"},
           req,
           res,
       );
     }
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await usersCol.doc(userId).update({password: hashed});
 
     res.status(200).json({message: "Password changed successfully"});
   } catch (error) {

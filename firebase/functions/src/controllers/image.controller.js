@@ -1,10 +1,9 @@
-
-
-const Image = require("../models/image.model");
-const Category = require("../models/category.model");
-const Report = require("../models/report.model");
-const mongoose = require("mongoose");
+const {db, bucket, FieldValue} = require("../common/firebaseAdmin");
 const sharp = require("sharp");
+
+const imagesCol = db.collection("images");
+const categoriesCol = db.collection("categories");
+const reportsCol = db.collection("reports");
 
 const uploadImage = async (req, res) => {
   try {
@@ -22,29 +21,28 @@ const uploadImage = async (req, res) => {
 
     let resolvedCategoryId = categoryId;
 
-    // Support direct ObjectId payload.
-    if (
-      resolvedCategoryId &&
-      !mongoose.Types.ObjectId.isValid(resolvedCategoryId)
-    ) {
-      return res.status(400).json({message: "Invalid categoryId"});
-    }
-
-    // Support category name payload by creating/finding a category.
     if (!resolvedCategoryId && categoryName) {
       const trimmedName = categoryName.trim();
-
       if (!trimmedName) {
         return res.status(400).json({message: "Invalid categoryName"});
       }
 
-      const category = await Category.findOneAndUpdate(
-          {name: trimmedName},
-          {$setOnInsert: {name: trimmedName}},
-          {new: true, upsert: true},
-      );
+      const norm = trimmedName.toLowerCase();
+      const catQuery = await categoriesCol
+          .where("normalizedName", "==", norm)
+          .limit(1)
+          .get();
 
-      resolvedCategoryId = category._id;
+      if (catQuery.docs[0] && catQuery.docs[0].exists) {
+        resolvedCategoryId = catQuery.docs[0].id;
+      } else {
+        const catRef = await categoriesCol.add({
+          name: trimmedName,
+          normalizedName: norm,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+        resolvedCategoryId = catRef.id;
+      }
     }
 
     if (!resolvedCategoryId) {
@@ -53,26 +51,38 @@ const uploadImage = async (req, res) => {
       });
     }
 
-
     const uploadedImages = await Promise.all(
         files.map(async (file) => {
           const thumbBuffer = await sharp(file.buffer)
               .resize(200, 200, {fit: "inside"})
               .toBuffer();
 
-          return Image.create({
+          const imgRef = await imagesCol.add({
             categoryId: resolvedCategoryId,
-            image: {
-              data: file.buffer,
-              contentType: file.mimetype,
-            },
-            thumb: {
-              data: thumbBuffer,
-              contentType: file.mimetype,
-            },
             fileName: file.originalname,
             size: file.size,
+            contentType: file.mimetype,
+            favouriteCount: 0,
+            downloadCount: 0,
+            createdAt: FieldValue.serverTimestamp(),
           });
+
+          if (bucket) {
+            const fullPath = `images/${imgRef.id}/${file.originalname}`;
+            const f = bucket.file(fullPath);
+            await f.save(file.buffer, {
+              metadata: {contentType: file.mimetype},
+            });
+            await imgRef.update({storagePath: fullPath});
+          }
+
+          await imgRef.update({
+            thumbBase64: thumbBuffer.toString("base64"),
+            thumbContentType: file.mimetype,
+          });
+
+          const doc = await imgRef.get();
+          return {id: doc.id, ...doc.data()};
         }),
     );
 
@@ -87,123 +97,81 @@ const uploadImage = async (req, res) => {
   }
 };
 
-// Escapes special regex characters to prevent ReDoS
-const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 const getAllImages = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const searchQuery = req.query.search || "";
-    const categoryFilter = req.query.category || "";
+    const searchQuery = (req.query.search || "").trim().toLowerCase();
+    const categoryFilter = (req.query.category || "").trim();
 
-    // Build the $match filter based on category and/or search
-    const buildMatchStage = () => {
-      if (!searchQuery && !categoryFilter) return null;
+    let q = imagesCol.orderBy("createdAt", "desc");
 
-      const filter = {};
-
-      if (categoryFilter) {
-        filter.categoryName = {
-          $regex: `^${escapeRegex(categoryFilter)}$`,
-          $options: "i",
-        };
+    if (categoryFilter) {
+      const catQ = await categoriesCol
+          .where("normalizedName", "==", categoryFilter.toLowerCase())
+          .limit(1)
+          .get();
+      if (catQ.docs[0] && catQ.docs[0].exists) {
+        q = q.where("categoryId", "==", catQ.docs[0].id);
+      } else {
+        return res.status(200).json({
+          success: true,
+          data: [],
+          currentPage: page,
+          totalPages: 0,
+        });
       }
+    }
 
-      if (searchQuery) {
-        if (categoryFilter) {
-          // Category already fixed — search only within file names
-          filter.fileName = {
-            $regex: escapeRegex(searchQuery),
-            $options: "i",
-          };
-        } else {
-          filter.$or = [
-            {fileName: {$regex: escapeRegex(searchQuery), $options: "i"}},
-            {categoryName: {$regex: escapeRegex(searchQuery), $options: "i"}},
-          ];
+    const totalSnapshot = await q.get();
+    const total = totalSnapshot.size;
+
+    const snapshot = await q.offset(skip).limit(limit).get();
+    const docs = snapshot.docs;
+
+    const categoryIds = Array.from(
+        new Set(docs.map((d) => d.data().categoryId).filter(Boolean)),
+    );
+    const categoriesMap = {};
+    if (categoryIds.length) {
+      const cats = await Promise.all(
+          categoryIds.map((id) => categoriesCol.doc(id).get()),
+      );
+      cats.forEach((c) => {
+        if (c.exists) {
+          categoriesMap[c.id] = c.data().name;
         }
-      }
+      });
+    }
 
-      return {$match: filter};
-    };
+    let images = docs.map((doc) => ({_id: doc.id, ...doc.data()}));
 
-    const matchStage = buildMatchStage();
+    if (searchQuery) {
+      images = images.filter((item) => {
+        const fileName = (item.fileName || "").toLowerCase();
+        const catName = (categoriesMap[item.categoryId] || "").toLowerCase();
+        return (
+          fileName.includes(searchQuery) ||
+          catName.includes(searchQuery)
+        );
+      });
+    }
 
-    // Use aggregation pipeline for better performance.
-    // Count + fetch happens in a single query.
-    const [result] = await Image.aggregate([
-      {$sort: {createdAt: -1}},
-      {
-        $lookup: {
-          from: "categories",
-          localField: "categoryId",
-          foreignField: "_id",
-          as: "categoryData",
-        },
-      },
-      {
-        $addFields: {
-          categoryName: {$arrayElemAt: ["$categoryData.name", 0]},
-        },
-      },
-      ...(matchStage ? [matchStage] : []),
-      {
-        $facet: {
-          metadata: [{$count: "total"}],
-          data: [
-            {$skip: skip},
-            {$limit: limit},
-            {
-              $project: {
-                _id: 1,
-                categoryId: 1,
-                fileName: 1,
-                size: 1,
-                createdAt: 1,
-                favouriteCount: {$ifNull: ["$favouriteCount", 0]},
-                downloadCount: {$ifNull: ["$downloadCount", 0]},
-                category: {
-                  $ifNull: ["$categoryName", "Unknown"],
-                },
-                contentType: "$image.contentType",
-                thumbData: "$thumb.data",
-                thumbContentType: "$thumb.contentType",
-              },
-            },
-          ],
-        },
-      },
-    ]);
-
-    const total =
-      result &&
-      result.metadata &&
-      result.metadata[0] &&
-      result.metadata[0].total ?
-        result.metadata[0].total :
-        0;
-    const images = result.data || [];
-
-
-    // Format images with base64 conversion only for thumb
     const formattedImages = images.map((item) => ({
       imageId: item._id,
       _id: item._id,
       categoryId: item.categoryId,
       fileName: item.fileName,
       size: item.size,
-      category: item.category,
+      category: categoriesMap[item.categoryId] || "Unknown",
       contentType: item.contentType,
       createdAt: item.createdAt,
-      favouriteCount: item.favouriteCount,
-      downloadCount: item.downloadCount,
-      thumbUrl: item.thumbData && item.thumbContentType ?
-          [
-            `data:${item.thumbContentType};base64,`,
-            item.thumbData.toString("base64"),
-          ].join("") :
+      favouriteCount: item.favouriteCount || 0,
+      downloadCount: item.downloadCount || 0,
+      thumbUrl:
+        item.thumbBase64 && item.thumbContentType ?
+          `data:${item.thumbContentType};base64,${item.thumbBase64}` :
           null,
     }));
 
@@ -221,41 +189,45 @@ const getAllImages = async (req, res) => {
 
 const updateImageStats = async (req, res) => {
   try {
-    // const { imageId, isLiked, isDisliked, isDownload } = req.body || {};
     const {imageId, isLiked, isDownload} = req.body || {};
-
     if (!imageId) {
       return res.status(400).json({message: "Invalid imageId"});
     }
-    const image = await Image.findById(imageId);
 
-    let originalImage = null;
-
-    if (!image) {
+    const imgRef = imagesCol.doc(imageId);
+    const imgDoc = await imgRef.get();
+    if (!imgDoc.exists) {
       return res.status(404).json({message: "Image not found"});
     }
 
-    if (isLiked) {
-      image.favouriteCount = (image.favouriteCount || 0) + 1;
-    } else if (isDownload) {
-      image.downloadCount = (image.downloadCount || 0) + 1;
-      const hasImageData =
-        image.image && image.image.data && image.image.contentType;
-      originalImage = hasImageData ?
-          [
-            `data:${image.image.contentType};base64,`,
-            image.image.data.toString("base64"),
-          ].join("") :
-        null;
-    }
+    let originalImage = null;
 
-    await image.save();
+    await db.runTransaction(async (tx) => {
+      const d = (await tx.get(imgRef)).data();
+      const update = {};
+      if (isLiked) {
+        update.favouriteCount = (d.favouriteCount || 0) + 1;
+      }
+      if (isDownload) {
+        update.downloadCount = (d.downloadCount || 0) + 1;
+      }
+      tx.update(imgRef, update);
+
+      if (isDownload && d.storagePath && bucket) {
+        const file = bucket.file(d.storagePath);
+        const [buf] = await file.download();
+        originalImage =
+          `data:${d.contentType};base64,${buf.toString("base64")}`;
+      }
+    });
+
+    const updated = (await imgRef.get()).data();
 
     res.status(200).json({
       success: true,
       data: {
-        favouriteCount: image.favouriteCount,
-        downloadCount: image.downloadCount,
+        favouriteCount: updated.favouriteCount || 0,
+        downloadCount: updated.downloadCount || 0,
         originalImage,
       },
     });
@@ -268,35 +240,33 @@ const updateImageStats = async (req, res) => {
 const getOriginalImage = async (req, res) => {
   try {
     const {imageId} = req.params || {};
-
-    if (!imageId || !mongoose.Types.ObjectId.isValid(imageId)) {
+    if (!imageId) {
       return res.status(400).json({message: "Invalid imageId"});
     }
 
-    const image = await Image.findById(imageId).select("image fileName");
-
-    if (!image) {
+    const imgRef = imagesCol.doc(imageId);
+    const imgDoc = await imgRef.get();
+    if (!imgDoc.exists) {
       return res.status(404).json({message: "Image not found"});
     }
+    const d = imgDoc.data();
 
-    const hasImageData =
-        image.image && image.image.data && image.image.contentType;
-    const originalImage = hasImageData ?
-        [
-          `data:${image.image.contentType};base64,`,
-          image.image.data.toString("base64"),
-        ].join("") :
-      null;
-
-    if (!originalImage) {
-      return res.status(404).json({message: "Original image not found"});
+    if (!d.storagePath || !bucket) {
+      return res.status(404).json({
+        message: "Original image not found",
+      });
     }
+
+    const file = bucket.file(d.storagePath);
+    const [buf] = await file.download();
+    const originalImage =
+      `data:${d.contentType};base64,${buf.toString("base64")}`;
 
     res.status(200).json({
       success: true,
       data: {
         imageId,
-        fileName: image.fileName,
+        fileName: d.fileName,
         originalImage,
       },
     });
@@ -306,23 +276,13 @@ const getOriginalImage = async (req, res) => {
   }
 };
 
-// Ensure database indexes for optimal query performance
-// Add these indexes to your MongoDB:
-// db.images.createIndex({ createdAt: -1 })
-// db.images.createIndex({ categoryId: 1 })
-// db.categories.createIndex({ name: 1 })
-
-
-// report image
 const reportImage = async (req, res) => {
   try {
     const {categoryId, imageId, name, email, message} = req.body || {};
-
-    if (!categoryId || !mongoose.Types.ObjectId.isValid(categoryId)) {
+    if (!categoryId) {
       return res.status(400).json({message: "Invalid categoryId"});
     }
-
-    if (!imageId || !mongoose.Types.ObjectId.isValid(imageId)) {
+    if (!imageId) {
       return res.status(400).json({message: "Invalid imageId"});
     }
 
@@ -333,22 +293,20 @@ const reportImage = async (req, res) => {
     if (!trimmedName) {
       return res.status(400).json({message: "Name is required"});
     }
-
     if (!trimmedEmail) {
       return res.status(400).json({message: "Email is required"});
     }
-
     if (!trimmedMessage) {
       return res.status(400).json({message: "Message is required"});
     }
 
-    const category = await Category.findById(categoryId).select("_id");
-    if (!category) {
+    const categoryDoc = await categoriesCol.doc(categoryId).get();
+    if (!categoryDoc.exists) {
       return res.status(404).json({message: "Category not found"});
     }
 
-    const image = await Image.findOne({_id: imageId, categoryId}).select("_id");
-    if (!image) {
+    const imageDoc = await imagesCol.doc(imageId).get();
+    if (!imageDoc.exists || imageDoc.data().categoryId !== categoryId) {
       return res.status(404).json({
         message: "Image not found for this category",
       });
@@ -360,18 +318,24 @@ const reportImage = async (req, res) => {
       name: trimmedName,
       email: trimmedEmail,
       message: trimmedMessage,
+      createdAt: FieldValue.serverTimestamp(),
     };
 
-    if (req.file) {
-      reportPayload.image = {
-        data: req.file.buffer,
-        contentType: req.file.mimetype,
-      };
-      reportPayload.fileName = req.file.originalname;
-      reportPayload.size = req.file.size;
-    }
+    const reportRef = await reportsCol.add(reportPayload);
 
-    await Report.create(reportPayload);
+    if (req.file && bucket) {
+      const fullPath = `reports/${reportRef.id}/${req.file.originalname}`;
+      const f = bucket.file(fullPath);
+      await f.save(req.file.buffer, {
+        metadata: {contentType: req.file.mimetype},
+      });
+      await reportRef.update({
+        reportImagePath: fullPath,
+        fileName: req.file.originalname,
+        size: req.file.size,
+        reportImageContentType: req.file.mimetype,
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -388,92 +352,75 @@ const getBlockedImages = async (req, res) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 9;
     const skip = (page - 1) * limit;
-    const search = (req.query.search || "").trim();
+    const search = (req.query.search || "").trim().toLowerCase();
 
-    const escapeRegex = (value = "") =>
-      value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const matchStage = search ?
-      {
-        $match: {
-          $or: [
-            {name: {$regex: escapeRegex(search), $options: "i"}},
-            {email: {$regex: escapeRegex(search), $options: "i"}},
-            {message: {$regex: escapeRegex(search), $options: "i"}},
-          ],
-        },
-      } :
-      null;
+    const q = reportsCol.orderBy("createdAt", "desc");
+    const totalSnap = await q.get();
+    const docs = await q.offset(skip).limit(limit).get();
 
-    const aggregationPipeline = [
-      ...(matchStage ? [matchStage] : []),
-      {$sort: {createdAt: -1}},
-      {
-        $facet: {
-          metadata: [{$count: "total"}],
-          data: [
-            {$skip: skip},
-            {$limit: limit},
-            {
-              $lookup: {
-                from: "categories",
-                localField: "categoryId",
-                foreignField: "_id",
-                as: "categoryData",
-              },
-            },
-            {
-              $project: {
-                _id: 1,
-                imageId: 1,
-                categoryId: 1,
-                name: 1,
-                email: 1,
-                message: 1,
-                fileName: 1,
-                size: 1,
-                createdAt: 1,
-                category: {
-                  $ifNull: [
-                    {$arrayElemAt: ["$categoryData.name", 0]},
-                    "Unknown",
-                  ],
-                },
-                reportImageData: "$image.data",
-                reportImageContentType: "$image.contentType",
-              },
-            },
-          ],
-        },
-      },
-    ];
+    let items = docs.docs.map((d) => ({_id: d.id, ...d.data()}));
 
-    const [result] = await Report.aggregate(aggregationPipeline);
+    if (search) {
+      items = items.filter((it) => {
+        const name = (it.name || "").toLowerCase();
+        const email = (it.email || "").toLowerCase();
+        const message = (it.message || "").toLowerCase();
+        return (
+          name.includes(search) ||
+          email.includes(search) ||
+          message.includes(search)
+        );
+      });
+    }
 
-    const total =
-      result &&
-      result.metadata &&
-      result.metadata[0] &&
-      result.metadata[0].total ? result.metadata[0].total : 0;
-    const blockedImages = (result && result.data) || [];
+    const categoryIds = Array.from(
+        new Set(items.map((i) => i.categoryId).filter(Boolean)),
+    );
+    const categoriesMap = {};
+    if (categoryIds.length) {
+      const cats = await Promise.all(
+          categoryIds.map((id) => categoriesCol.doc(id).get()),
+      );
+      cats.forEach((c) => {
+        if (c.exists) {
+          categoriesMap[c.id] = c.data().name;
+        }
+      });
+    }
 
-    const data = blockedImages.map((item) => ({
-      reportId: item._id,
-      imageId: item.imageId,
-      categoryId: item.categoryId,
-      name: item.name,
-      email: item.email,
-      message: item.message,
-      fileName: item.fileName,
-      size: item.size,
-      category: item.category,
-      createdAt: item.createdAt,
-      reportImageUrl: item.reportImageData && item.reportImageContentType ?
-          [
-            `data:${item.reportImageContentType};base64,`,
-            item.reportImageData.toString("base64"),
-          ].join("") :
-        null,
-    }));
+    const data = await Promise.all(
+        items.map(async (item) => {
+          let reportImageUrl = null;
+          if (item.reportImagePath && bucket) {
+            const file = bucket.file(item.reportImagePath);
+            try {
+              const [buf] = await file.download();
+              reportImageUrl =
+                "data:" +
+                item.reportImageContentType +
+                ";base64," +
+                buf.toString("base64");
+            } catch (e) {
+              reportImageUrl = null;
+            }
+          }
+          return {
+            reportId: item._id,
+            imageId: item.imageId,
+            categoryId: item.categoryId,
+            name: item.name,
+            email: item.email,
+            message: item.message,
+            fileName: item.fileName,
+            size: item.size,
+            category: categoriesMap[item.categoryId] || "Unknown",
+            createdAt: item.createdAt,
+            reportImageUrl,
+          };
+        }),
+    );
+
+    const total = totalSnap.size;
 
     res.status(200).json({
       success: true,

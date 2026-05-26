@@ -74,15 +74,8 @@ function ImagesList() {
                 if (selectedCategory && selectedCategory !== 'All') {
                     params.set('category', selectedCategory);
                 }
-                console.log('====================================');
-                console.log("${apiUrl}/api/images?${params} -- ",`${apiUrl}/api/images?${params}`);
-                console.log('====================================');
                 const res = await fetch(`${apiUrl}/api/images?${params}`);
                 const data = await res.json();
-                console.log('====================================');
-                console.log("res -- ",data);
-                console.log('====================================');
-
                 if (!res.ok) {
                     throw new Error(data.message || 'Failed to fetch images');
                 }
