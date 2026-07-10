@@ -16,6 +16,9 @@ import { downloadBase64Image } from '../common/utils';
 import Button from '@mui/material/Button';
 import { useSearchParams } from 'react-router-dom';
 const apiUrl = import.meta.env.VITE_BASE_URL;
+console.log('====================================');
+console.log("Api Url --- ",apiUrl);
+console.log('====================================');
 const PAGE_WINDOW_SIZE = 10;
 
 function ImagesList() {
@@ -73,7 +76,6 @@ function ImagesList() {
                 }
                 const res = await fetch(`${apiUrl}/api/images?${params}`);
                 const data = await res.json();
-
                 if (!res.ok) {
                     throw new Error(data.message || 'Failed to fetch images');
                 }
@@ -189,10 +191,17 @@ function ImagesList() {
             }
         };
 
-        window.googletag.pubads().addEventListener("impressionViewable", onImpressionViewable);
+        window.googletag = window.googletag || { cmd: [] };
+        window.googletag.cmd.push(() => {
+            window.googletag.pubads().addEventListener("impressionViewable", onImpressionViewable);
+        });
 
         return () => {
-            window.googletag.pubads().removeEventListener("impressionViewable", onImpressionViewable);
+            if (window.googletag?.cmd) {
+                window.googletag.cmd.push(() => {
+                    window.googletag.pubads().removeEventListener("impressionViewable", onImpressionViewable);
+                });
+            }
         };
     }, []);
 

@@ -1,26 +1,39 @@
 {
   "name": "functions",
   "description": "Cloud Functions for Firebase",
+  "engines": {
+    "node": "24"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "firebase-admin": "^13.6.0",
+    "firebase-functions": "^7.0.0",
+    "jsonwebtoken": "^9.0.2",
+    
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.10",
+    "sharp": "^0.34.3"
+  },
+  "devDependencies": {
+    "eslint": "^8.15.0",
+    "eslint-config-google": "^0.14.0",
+    "firebase-functions-test": "^3.4.1",
+    "mocha": "^10.2.0",
+    "supertest": "^6.3.3"
+  },
   "scripts": {
     "lint": "eslint .",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
-  },
-  "engines": {
-    "node": "24"
-  },
-  "main": "index.js",
-  "dependencies": {
-    "firebase-admin": "^13.6.0",
-    "firebase-functions": "^7.0.0"
-  },
-  "devDependencies": {
-    "eslint": "^8.15.0",
-    "eslint-config-google": "^0.14.0",
-    "firebase-functions-test": "^3.4.1"
+    "logs": "firebase functions:log",
+    "test:smoke": "mocha test/smoke.test.js --exit",
+    "test:smoke-run": "node test/runSmoke.js"
   },
   "private": true
 }
